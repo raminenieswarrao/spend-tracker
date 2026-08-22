@@ -6,8 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class SpaController {
 
-    @GetMapping("/home")
-    public String home() {
+    @GetMapping({
+            "/",
+            "/home"
+    })
+    public String frontend() {
         return "forward:/index.html";
     }
 }
