@@ -1,0 +1,748 @@
+<ion-content [fullscreen]="true">
+
+  <div class="page-shell">
+
+    <!-- =========================================
+         HEADER
+         ========================================= -->
+
+    <header class="top-section">
+
+      <div>
+
+        <p class="eyebrow">
+          SPEND TRACKER
+        </p>
+
+        <h1>
+          My Spending
+        </h1>
+
+        <p class="month">
+          {{ periodLabel }}
+        </p>
+
+      </div>
+
+      <div class="avatar">
+        E
+      </div>
+
+    </header>
+
+
+    <!-- =========================================
+         PERIOD FILTER
+         ========================================= -->
+
+    <section class="period-section">
+
+      <div class="period-toggle">
+
+        <button
+          type="button"
+          [class.active]="periodMode === 'MONTH'"
+          (click)="setPeriodMode('MONTH')">
+
+          Month
+
+        </button>
+
+        <button
+          type="button"
+          [class.active]="periodMode === 'YEAR'"
+          (click)="setPeriodMode('YEAR')">
+
+          Year
+
+        </button>
+
+      </div>
+
+
+      <div class="period-selectors">
+
+        @if (periodMode === 'MONTH') {
+
+        <select
+          [(ngModel)]="selectedMonth"
+          (change)="onPeriodChange()">
+
+          @for (
+          month of months;
+          track month.value
+          ) {
+
+          <option [ngValue]="month.value">
+            {{ month.label }}
+          </option>
+
+          }
+
+        </select>
+
+        }
+
+
+        <select
+          [(ngModel)]="selectedYear"
+          (change)="onPeriodChange()">
+
+          @for (
+          year of years;
+          track year
+          ) {
+
+          <option [ngValue]="year">
+            {{ year }}
+          </option>
+
+          }
+
+        </select>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================================
+         LOADING
+         ========================================= -->
+
+    @if (loading) {
+
+    <div class="loading">
+      <ion-spinner></ion-spinner>
+    </div>
+
+    } @else {
+
+
+    <!-- =========================================
+         SUMMARY
+         ========================================= -->
+
+    <section class="balance-card">
+
+      <p class="card-label">
+        Total spent {{ periodDescription }}
+      </p>
+
+      <h2>
+        {{ totalSpent | currency:'USD' }}
+      </h2>
+
+
+      <div class="budget-row">
+
+          <span>
+            {{ remainingBudget | currency:'USD' }}
+            remaining
+          </span>
+
+        <span>
+            {{ budgetPercentage | number:'1.0-0' }}%
+          </span>
+
+      </div>
+
+
+      <div class="progress-track">
+
+        <div
+          class="progress-value"
+          [style.width.%]="budgetPercentage">
+        </div>
+
+      </div>
+
+
+      <p class="budget-caption">
+
+        {{ budgetLabel }}:
+        {{ periodBudget | currency:'USD' }}
+
+      </p>
+
+    </section>
+
+
+    <!-- =========================================
+         CATEGORY ANALYTICS
+         ========================================= -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <div>
+
+          <h3>
+            Spending by Category
+          </h3>
+
+          <span>
+              {{ periodLabel }}
+            </span>
+
+        </div>
+
+      </div>
+
+
+      @if (categorySummaries.length > 0) {
+
+      <div class="analytics-card">
+
+
+        <!-- DONUT -->
+
+        <div class="donut-wrapper">
+
+          <div
+            class="donut-chart"
+            [style.background]="donutGradient">
+
+            <div class="donut-center">
+
+              <strong>
+                {{ totalSpent | currency:'USD' }}
+              </strong>
+
+              <span>
+                    spent
+                  </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- CATEGORY LIST -->
+
+        <div class="category-list">
+
+          @for (
+          category of categorySummaries;
+          track category.value
+          ) {
+
+          <div class="category-row">
+
+            <div class="category-icon">
+              {{ category.icon }}
+            </div>
+
+
+            <div class="category-info">
+
+              <div class="category-title-row">
+
+                      <span>
+                        {{ category.label }}
+                      </span>
+
+                <strong>
+                  {{ category.amount | currency:'USD' }}
+                </strong>
+
+              </div>
+
+
+              <div class="category-meta">
+
+                      <span
+                        class="category-dot"
+                        [style.background]="category.color">
+                      </span>
+
+                <span>
+                        {{
+                          category.percentage
+                            | number:'1.0-0'
+                        }}%
+                      </span>
+
+              </div>
+
+
+              <div class="category-bar">
+
+                <div
+                  class="category-bar-value"
+                  [style.background]="category.color"
+                  [style.width.%]="category.percentage">
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          }
+
+        </div>
+
+      </div>
+
+      } @else {
+
+      <div class="empty-card">
+
+        <div class="empty-icon">
+          📊
+        </div>
+
+        <strong>
+          No spending yet
+        </strong>
+
+        <span>
+              Add an expense for {{ periodLabel }}.
+            </span>
+
+      </div>
+
+      }
+
+    </section>
+
+
+    <!-- =========================================
+         TRANSACTIONS
+         ========================================= -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <div>
+
+          <h3>
+            Transactions
+          </h3>
+
+          <span>
+              {{ expenses.length }}
+              transactions
+            </span>
+
+        </div>
+
+      </div>
+
+
+      @if (expenses.length > 0) {
+
+      <div class="transaction-card">
+
+        @for (
+        expense of expenses;
+        track expense.id
+        ) {
+
+        <div class="transaction">
+
+
+          <div class="transaction-icon">
+
+            {{
+            getCategoryIcon(
+            expense.category
+            )
+            }}
+
+          </div>
+
+
+          <button
+            type="button"
+            class="transaction-main"
+            (click)="openEditExpense(expense)">
+
+            <div class="transaction-details">
+
+              <strong>
+
+                {{
+                expense.merchant ||
+                getCategoryLabel(
+                expense.category
+                )
+                }}
+
+              </strong>
+
+              <span>
+
+                      {{
+                        expense.expenseDate
+                          | date:'MMM d, y'
+                      }}
+
+                      ·
+
+                      {{
+                        getCategoryLabel(
+                          expense.category
+                        )
+                      }}
+
+                    </span>
+
+            </div>
+
+
+            <div class="transaction-amount">
+
+              -{{
+              expense.amount
+              | currency:'USD'
+              }}
+
+            </div>
+
+          </button>
+
+
+          <button
+            type="button"
+            class="edit-transaction-button"
+            aria-label="Edit expense"
+            (click)="openEditExpense(expense)">
+
+            ⋯
+
+          </button>
+
+        </div>
+
+        }
+
+      </div>
+
+      } @else {
+
+      <div class="empty-card">
+
+        <strong>
+          No transactions
+        </strong>
+
+        <span>
+              Nothing recorded for {{ periodLabel }}.
+            </span>
+
+      </div>
+
+      }
+
+    </section>
+
+    }
+
+
+    <!-- =========================================
+         ADD BUTTON
+         ========================================= -->
+
+    <button
+      class="add-button"
+      type="button"
+      aria-label="Add expense"
+      (click)="openAddExpense()">
+
+      +
+
+    </button>
+
+  </div>
+
+
+  <!-- =========================================
+       ADD / EDIT SHEET
+       ========================================= -->
+
+  @if (addExpenseOpen) {
+
+  <div
+    class="sheet-backdrop"
+    (click)="closeAddExpense()">
+  </div>
+
+
+  <section class="expense-sheet">
+
+    <div class="sheet-handle">
+    </div>
+
+
+    <div class="sheet-header">
+
+      <div>
+
+        <p class="sheet-eyebrow">
+
+          @if (editingExpenseId === null) {
+          NEW TRANSACTION
+          } @else {
+          EDIT TRANSACTION
+          }
+
+        </p>
+
+
+        <h2>
+
+          @if (editingExpenseId === null) {
+          Add Expense
+          } @else {
+          Edit Expense
+          }
+
+        </h2>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="close-button"
+        (click)="closeAddExpense()">
+
+        ×
+
+      </button>
+
+    </div>
+
+
+    <!-- AMOUNT -->
+
+    <div class="amount-section">
+
+      <label>
+        Amount
+      </label>
+
+      <div class="amount-input">
+
+          <span>
+            $
+          </span>
+
+        <input
+          type="number"
+          inputmode="decimal"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          [(ngModel)]="newExpense.amount">
+
+      </div>
+
+    </div>
+
+
+    <!-- CATEGORY -->
+
+    <div class="form-section">
+
+      <label class="field-label">
+        Category
+      </label>
+
+
+      <div class="category-grid">
+
+        @for (
+        category of categories;
+        track category.value
+        ) {
+
+        <button
+          type="button"
+          class="category-option"
+          [class.selected]="
+                newExpense.category ===
+                category.value
+              "
+          (click)="
+                selectCategory(
+                  category.value
+                )
+              ">
+
+              <span class="option-icon">
+                {{ category.icon }}
+              </span>
+
+          <span>
+                {{ category.label }}
+              </span>
+
+        </button>
+
+        }
+
+      </div>
+
+    </div>
+
+
+    <!-- MERCHANT / DATE -->
+
+    <div class="form-grid">
+
+      <div class="form-field">
+
+        <label>
+          Merchant
+        </label>
+
+        <input
+          type="text"
+          placeholder="Kroger, Shell..."
+          [(ngModel)]="newExpense.merchant">
+
+      </div>
+
+
+      <div class="form-field">
+
+        <label>
+          Date
+        </label>
+
+        <input
+          type="date"
+          [(ngModel)]="newExpense.expenseDate">
+
+      </div>
+
+    </div>
+
+
+    <!-- PAYMENT -->
+
+    <div class="form-field">
+
+      <label>
+        Payment Method
+      </label>
+
+      <select
+        [(ngModel)]="newExpense.paymentMethod">
+
+        @for (
+        method of paymentMethods;
+        track method
+        ) {
+
+        <option [value]="method">
+          {{ method }}
+        </option>
+
+        }
+
+      </select>
+
+    </div>
+
+
+    <!-- DESCRIPTION -->
+
+    <div class="form-field">
+
+      <label>
+        Description
+      </label>
+
+      <input
+        type="text"
+        placeholder="Optional"
+        [(ngModel)]="newExpense.description">
+
+    </div>
+
+
+    <!-- NOTES -->
+
+    <div class="form-field">
+
+      <label>
+        Notes
+      </label>
+
+      <textarea
+        rows="3"
+        placeholder="Anything you want to remember..."
+        [(ngModel)]="newExpense.notes">
+        </textarea>
+
+    </div>
+
+
+    @if (saveError) {
+
+    <div class="save-error">
+      {{ saveError }}
+    </div>
+
+    }
+
+
+    <!-- DELETE -->
+
+    @if (editingExpenseId !== null) {
+
+    <button
+      type="button"
+      class="delete-button"
+      [disabled]="saving || deleting"
+      (click)="deleteExpense()">
+
+      @if (deleting) {
+      Deleting...
+      } @else {
+      Delete Expense
+      }
+
+    </button>
+
+    }
+
+
+    <!-- SAVE -->
+
+    <button
+      type="button"
+      class="save-button"
+      [disabled]="saving || deleting"
+      (click)="saveExpense()">
+
+      @if (saving) {
+
+      Saving...
+
+      } @else if (editingExpenseId !== null) {
+
+      Save Changes
+
+      } @else {
+
+      Save Expense
+
+      }
+
+    </button>
+
+  </section>
+
+  }
+
+</ion-content>
