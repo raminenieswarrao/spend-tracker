@@ -1,0 +1,118 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Spend Tracker</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="login-content">
+
+  <div class="login-wrapper">
+
+    <div class="login-card">
+
+      <div class="login-heading">
+
+        <h1>
+          Welcome back
+        </h1>
+
+        <p>
+          Sign in to manage your expenses.
+        </p>
+
+      </div>
+
+      <form
+        #loginForm="ngForm"
+        (ngSubmit)="login()"
+      >
+
+        <ion-item class="form-item">
+
+          <ion-label position="stacked">
+            Email
+          </ion-label>
+
+          <ion-input
+            type="email"
+            name="email"
+            [(ngModel)]="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            inputmode="email"
+            required
+            [disabled]="loading"
+          >
+          </ion-input>
+
+        </ion-item>
+
+
+        <ion-item class="form-item">
+
+          <ion-label position="stacked">
+            Password
+          </ion-label>
+
+          <ion-input
+            type="password"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+            [disabled]="loading"
+          >
+          </ion-input>
+
+        </ion-item>
+
+
+        <div
+          *ngIf="errorMessage"
+          class="error-message"
+          role="alert"
+        >
+          {{ errorMessage }}
+        </div>
+
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="login-button"
+          [disabled]="loading || loginForm.invalid"
+        >
+
+          <ion-spinner
+            *ngIf="loading"
+            name="crescent"
+          >
+          </ion-spinner>
+
+          <span *ngIf="!loading">
+            Sign In
+          </span>
+
+        </ion-button>
+
+
+        <div class="register-link">
+
+          <span>
+            Don’t have an account?
+          </span>
+
+          <a routerLink="/register">
+            Create account
+          </a>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</ion-content>

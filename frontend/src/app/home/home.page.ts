@@ -9,9 +9,17 @@ OnInit
 import { FormsModule } from '@angular/forms';
 
 import {
+Router
+} from '@angular/router';
+
+import {
 IonContent,
 IonSpinner
 } from '@ionic/angular';
+
+import {
+AuthService
+} from '../services/auth.service';
 
 import {
 CreateExpenseRequest,
@@ -106,8 +114,8 @@ new Date().getFullYear();
       { length: 7 },
       (_, index) =>
         new Date().getFullYear()
-          - 5
-          + index
+        - 5
+        + index
     );
 
   readonly paymentMethods = [
@@ -122,129 +130,135 @@ new Date().getFullYear();
   readonly categories:
     CategoryOption[] = [
 
-    {
-      value: 'HOUSING',
-      label: 'Housing',
-      icon: '🏠',
-      color: '#6366f1'
-    },
+      {
+        value: 'HOUSING',
+        label: 'Housing',
+        icon: '🏠',
+        color: '#6366f1'
+      },
 
-    {
-      value: 'GROCERIES',
-      label: 'Groceries',
-      icon: '🛒',
-      color: '#22c55e'
-    },
+      {
+        value: 'GROCERIES',
+        label: 'Groceries',
+        icon: '🛒',
+        color: '#22c55e'
+      },
 
-    {
-      value: 'FOOD_AND_DINING',
-      label: 'Food & Dining',
-      icon: '🍽️',
-      color: '#f97316'
-    },
+      {
+        value: 'FOOD_AND_DINING',
+        label: 'Food & Dining',
+        icon: '🍽️',
+        color: '#f97316'
+      },
 
-    {
-      value: 'TRANSPORTATION',
-      label: 'Transportation',
-      icon: '🚘',
-      color: '#0ea5e9'
-    },
+      {
+        value: 'TRANSPORTATION',
+        label: 'Transportation',
+        icon: '🚘',
+        color: '#0ea5e9'
+      },
 
-    {
-      value: 'CAR',
-      label: 'Car',
-      icon: '🚗',
-      color: '#64748b'
-    },
+      {
+        value: 'CAR',
+        label: 'Car',
+        icon: '🚗',
+        color: '#64748b'
+      },
 
-    {
-      value: 'UTILITIES',
-      label: 'Utilities',
-      icon: '💡',
-      color: '#eab308'
-    },
+      {
+        value: 'UTILITIES',
+        label: 'Utilities',
+        icon: '💡',
+        color: '#eab308'
+      },
 
-    {
-      value: 'SHOPPING',
-      label: 'Shopping',
-      icon: '🛍️',
-      color: '#ec4899'
-    },
+      {
+        value: 'SHOPPING',
+        label: 'Shopping',
+        icon: '🛍️',
+        color: '#ec4899'
+      },
 
-    {
-      value: 'HEALTH',
-      label: 'Health',
-      icon: '❤️',
-      color: '#ef4444'
-    },
+      {
+        value: 'HEALTH',
+        label: 'Health',
+        icon: '❤️',
+        color: '#ef4444'
+      },
 
-    {
-      value: 'SUBSCRIPTIONS',
-      label: 'Subscriptions',
-      icon: '📱',
-      color: '#8b5cf6'
-    },
+      {
+        value: 'SUBSCRIPTIONS',
+        label: 'Subscriptions',
+        icon: '📱',
+        color: '#8b5cf6'
+      },
 
-    {
-      value: 'ENTERTAINMENT',
-      label: 'Entertainment',
-      icon: '🎬',
-      color: '#14b8a6'
-    },
+      {
+        value: 'ENTERTAINMENT',
+        label: 'Entertainment',
+        icon: '🎬',
+        color: '#14b8a6'
+      },
 
-    {
-      value: 'TRAVEL',
-      label: 'Travel',
-      icon: '✈️',
-      color: '#3b82f6'
-    },
+      {
+        value: 'TRAVEL',
+        label: 'Travel',
+        icon: '✈️',
+        color: '#3b82f6'
+      },
 
-    {
-      value: 'EDUCATION',
-      label: 'Education',
-      icon: '🎓',
-      color: '#a855f7'
-    },
+      {
+        value: 'EDUCATION',
+        label: 'Education',
+        icon: '🎓',
+        color: '#a855f7'
+      },
 
-    {
-      value: 'PERSONAL_CARE',
-      label: 'Personal Care',
-      icon: '💇',
-      color: '#f43f5e'
-    },
+      {
+        value: 'PERSONAL_CARE',
+        label: 'Personal Care',
+        icon: '💇',
+        color: '#f43f5e'
+      },
 
-    {
-      value: 'INSURANCE',
-      label: 'Insurance',
-      icon: '🛡️',
-      color: '#475569'
-    },
+      {
+        value: 'INSURANCE',
+        label: 'Insurance',
+        icon: '🛡️',
+        color: '#475569'
+      },
 
-    {
-      value: 'FAMILY_AND_GIFTS',
-      label: 'Family & Gifts',
-      icon: '🎁',
-      color: '#d946ef'
-    },
+      {
+        value: 'FAMILY_AND_GIFTS',
+        label: 'Family & Gifts',
+        icon: '🎁',
+        color: '#d946ef'
+      },
 
-    {
-      value: 'FEES_AND_TAXES',
-      label: 'Fees & Taxes',
-      icon: '🧾',
-      color: '#78716c'
-    },
+      {
+        value: 'FEES_AND_TAXES',
+        label: 'Fees & Taxes',
+        icon: '🧾',
+        color: '#78716c'
+      },
 
-    {
-      value: 'OTHER',
-      label: 'Other',
-      icon: '💵',
-      color: '#94a3b8'
-    }
-  ];
+      {
+        value: 'OTHER',
+        label: 'Other',
+        icon: '💵',
+        color: '#94a3b8'
+      }
+    ];
 
   constructor(
     private readonly expenseService:
       ExpenseService,
+
+    private readonly authService:
+      AuthService,
+
+    private readonly router:
+      Router,
 
     private readonly cdr:
       ChangeDetectorRef
@@ -253,6 +267,32 @@ new Date().getFullYear();
   ngOnInit(): void {
 
     this.loadExpenses();
+  }
+
+  logout(): void {
+
+    this.authService
+      .logout()
+      .subscribe({
+
+        next: () => {
+
+          this.router.navigateByUrl(
+            '/login',
+            {
+              replaceUrl: true
+            }
+          );
+        },
+
+        error: error => {
+
+          console.error(
+            'Unable to log out',
+            error
+          );
+        }
+      });
   }
 
   setPeriodMode(
@@ -353,8 +393,8 @@ new Date().getFullYear();
         expense.expenseDate,
 
       paymentMethod:
-        expense.paymentMethod ??
-        'Credit Card',
+        expense.paymentMethod
+        ?? 'Credit Card',
 
       notes:
         expense.notes ?? ''
@@ -428,15 +468,15 @@ new Date().getFullYear();
       this.editingExpenseId === null
 
         ? this.expenseService
-            .createExpense(
-              this.newExpense
+          .createExpense(
+            this.newExpense
 )
 
 : this.expenseService
 .updateExpense(
-              this.editingExpenseId,
-              this.newExpense
-            );
+            this.editingExpenseId,
+            this.newExpense
+          );
 
     request$.subscribe({
 
@@ -591,9 +631,9 @@ new Date().getFullYear();
               percentage:
                 this.totalSpent > 0
                   ? (
-                      amount /
-                      this.totalSpent
-                    ) * 100
+                    amount /
+                    this.totalSpent
+                  ) * 100
                   : 0
             };
           }
@@ -645,6 +685,22 @@ new Date().getFullYear();
       ).padStart(2, '0')
 
     ].join('-');
+  }
+
+  get userInitial(): string {
+
+    const user =
+      this.authService
+        .getCurrentUserValue();
+
+    const value =
+      user?.name?.trim()
+      || user?.email?.trim()
+      || 'U';
+
+    return value
+      .charAt(0)
+      .toUpperCase();
   }
 
   get periodBudget(): number {
@@ -763,7 +819,7 @@ new Date().getFullYear();
       .find(
         item =>
           item.value === category
-      )
+)
 ?.label ?? category;
 }
 
