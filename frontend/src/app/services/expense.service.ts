@@ -1,11 +1,18 @@
-import { Injectable, isDevMode } from '@angular/core';
+import {
+  Injectable,
+isDevMode
+} from '@angular/core';
 
 import {
 HttpClient,
+HttpHeaders,
 HttpParams
 } from '@angular/common/http';
 
-import { Observable } from 'rxjs';
+import {
+Observable,
+switchMap
+} from 'rxjs';
 
 export interface Expense {
 id: number;
@@ -29,14 +36,26 @@ paymentMethod?: string;
 notes?: string;
 }
 
+interface CsrfResponse {
+headerName: string;
+parameterName: string;
+token: string;
+}
+
 @Injectable({
 providedIn: 'root'
 })
 export class ExpenseService {
 
-private readonly apiUrl = isDevMode()
+private readonly apiUrl =
+isDevMode()
 ? 'http://localhost:8080/api/expenses'
 : '/api/expenses';
+
+private readonly authApiUrl =
+isDevMode()
+? 'http://localhost:8080/api/auth'
+: '/api/auth';
 
 constructor(
     private readonly http: HttpClient
@@ -55,6 +74,7 @@ constructor(
         );
 
     if (month !== undefined) {
+
       params =
         params.set(
           'month',
@@ -64,7 +84,10 @@ constructor(
 
     return this.http.get<Expense[]>(
       this.apiUrl,
-      { params }
+      {
+        params,
+        withCredentials: true
+      }
     );
   }
 
@@ -72,10 +95,28 @@ constructor(
     expense: CreateExpenseRequest
   ): Observable<Expense> {
 
-    return this.http.post<Expense>(
-      this.apiUrl,
-      expense
-    );
+    return this.getCsrfToken()
+      .pipe(
+
+        switchMap(csrf => {
+
+          const headers =
+            new HttpHeaders()
+              .set(
+                csrf.headerName,
+                csrf.token
+              );
+
+          return this.http.post<Expense>(
+            this.apiUrl,
+            expense,
+            {
+              headers,
+              withCredentials: true
+            }
+          );
+        })
+      );
   }
 
   updateExpense(
@@ -83,18 +124,65 @@ constructor(
     expense: CreateExpenseRequest
   ): Observable<Expense> {
 
-    return this.http.put<Expense>(
-      `${this.apiUrl}/${id}`,
-      expense
-    );
+    return this.getCsrfToken()
+      .pipe(
+
+        switchMap(csrf => {
+
+          const headers =
+            new HttpHeaders()
+              .set(
+                csrf.headerName,
+                csrf.token
+              );
+
+          return this.http.put<Expense>(
+            `${this.apiUrl}/${id}`,
+            expense,
+            {
+              headers,
+              withCredentials: true
+            }
+          );
+        })
+      );
   }
 
   deleteExpense(
     id: number
   ): Observable<void> {
 
-    return this.http.delete<void>(
-      `${this.apiUrl}/${id}`
+    return this.getCsrfToken()
+      .pipe(
+
+        switchMap(csrf => {
+
+          const headers =
+            new HttpHeaders()
+              .set(
+                csrf.headerName,
+                csrf.token
+              );
+
+          return this.http.delete<void>(
+            `${this.apiUrl}/${id}`,
+            {
+              headers,
+              withCredentials: true
+            }
+          );
+        })
+      );
+  }
+
+  private getCsrfToken():
+    Observable<CsrfResponse> {
+
+    return this.http.get<CsrfResponse>(
+      `${this.authApiUrl}/csrf`,
+      {
+        withCredentials: true
+      }
     );
   }
 }

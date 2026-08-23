@@ -24,9 +24,16 @@
 
       </div>
 
-      <div class="avatar">
-        E
-      </div>
+      <button
+        type="button"
+        class="avatar"
+        aria-label="Log out"
+        title="Log out"
+        (click)="logout()">
+
+        {{ userInitial }}
+
+      </button>
 
     </header>
 
@@ -136,14 +143,14 @@
 
       <div class="budget-row">
 
-          <span>
-            {{ remainingBudget | currency:'USD' }}
-            remaining
-          </span>
+        <span>
+          {{ remainingBudget | currency:'USD' }}
+          remaining
+        </span>
 
         <span>
-            {{ budgetPercentage | number:'1.0-0' }}%
-          </span>
+          {{ budgetPercentage | number:'1.0-0' }}%
+        </span>
 
       </div>
 
@@ -183,8 +190,8 @@
           </h3>
 
           <span>
-              {{ periodLabel }}
-            </span>
+            {{ periodLabel }}
+          </span>
 
         </div>
 
@@ -211,8 +218,8 @@
               </strong>
 
               <span>
-                    spent
-                  </span>
+                spent
+              </span>
 
             </div>
 
@@ -241,9 +248,9 @@
 
               <div class="category-title-row">
 
-                      <span>
-                        {{ category.label }}
-                      </span>
+                <span>
+                  {{ category.label }}
+                </span>
 
                 <strong>
                   {{ category.amount | currency:'USD' }}
@@ -254,17 +261,17 @@
 
               <div class="category-meta">
 
-                      <span
-                        class="category-dot"
-                        [style.background]="category.color">
-                      </span>
+                <span
+                  class="category-dot"
+                  [style.background]="category.color">
+                </span>
 
                 <span>
-                        {{
-                          category.percentage
-                            | number:'1.0-0'
-                        }}%
-                      </span>
+                  {{
+                    category.percentage
+                      | number:'1.0-0'
+                  }}%
+                </span>
 
               </div>
 
@@ -302,8 +309,8 @@
         </strong>
 
         <span>
-              Add an expense for {{ periodLabel }}.
-            </span>
+          Add an expense for {{ periodLabel }}.
+        </span>
 
       </div>
 
@@ -327,9 +334,9 @@
           </h3>
 
           <span>
-              {{ expenses.length }}
-              transactions
-            </span>
+            {{ expenses.length }}
+            transactions
+          </span>
 
         </div>
 
@@ -379,20 +386,20 @@
 
               <span>
 
-                      {{
-                        expense.expenseDate
-                          | date:'MMM d, y'
-                      }}
+                {{
+                  expense.expenseDate
+                    | date:'MMM d, y'
+                }}
 
-                      ·
+                ·
 
-                      {{
-                        getCategoryLabel(
-                          expense.category
-                        )
-                      }}
+                {{
+                  getCategoryLabel(
+                    expense.category
+                  )
+                }}
 
-                    </span>
+              </span>
 
             </div>
 
@@ -434,8 +441,8 @@
         </strong>
 
         <span>
-              Nothing recorded for {{ periodLabel }}.
-            </span>
+          Nothing recorded for {{ periodLabel }}.
+        </span>
 
       </div>
 
@@ -548,9 +555,9 @@
 
       <div class="amount-input">
 
-          <span>
-            $
-          </span>
+        <span>
+          $
+        </span>
 
         <input
           type="number"
@@ -585,22 +592,22 @@
           type="button"
           class="category-option"
           [class.selected]="
-                newExpense.category ===
-                category.value
-              "
+            newExpense.category ===
+            category.value
+          "
           (click)="
-                selectCategory(
-                  category.value
-                )
-              ">
+            selectCategory(
+              category.value
+            )
+          ">
 
-              <span class="option-icon">
-                {{ category.icon }}
-              </span>
+          <span class="option-icon">
+            {{ category.icon }}
+          </span>
 
           <span>
-                {{ category.label }}
-              </span>
+            {{ category.label }}
+          </span>
 
         </button>
 
@@ -699,7 +706,7 @@
         rows="3"
         placeholder="Anything you want to remember..."
         [(ngModel)]="newExpense.notes">
-        </textarea>
+      </textarea>
 
     </div>
 

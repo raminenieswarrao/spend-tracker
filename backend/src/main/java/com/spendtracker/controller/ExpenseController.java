@@ -1,10 +1,16 @@
 package com.spendtracker.controller;
 
+import com.spendtracker.dto.expense.ExpenseRequest;
+import com.spendtracker.dto.expense.ExpenseResponse;
 import com.spendtracker.model.Expense;
 import com.spendtracker.model.ExpenseCategory;
+import com.spendtracker.model.User;
 import com.spendtracker.repository.ExpenseRepository;
+import com.spendtracker.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,37 +25,87 @@ import java.util.List;
 public class ExpenseController {
 
     private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
 
     public ExpenseController(
-            ExpenseRepository expenseRepository) {
-
+            ExpenseRepository expenseRepository,
+            UserRepository userRepository
+    ) {
         this.expenseRepository = expenseRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Expense createExpense(
-            @Valid @RequestBody Expense expense) {
+    public ExpenseResponse createExpense(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ExpenseRequest request
+    ) {
 
-        expense.setId(null);
+        Long userId =
+                getAuthenticatedUserId(jwt);
 
-        return expenseRepository.save(expense);
+        User user =
+                getAuthenticatedUser(userId);
+
+        Expense expense =
+                new Expense();
+
+        /*
+         * SECURITY:
+         *
+         * Expense ownership always comes from the
+         * authenticated JWT.
+         *
+         * The frontend cannot select another user.
+         */
+        expense.setUser(user);
+
+        applyRequest(
+                expense,
+                request
+        );
+
+        Expense savedExpense =
+                expenseRepository.save(expense);
+
+        return toResponse(savedExpense);
     }
 
     @GetMapping
-    public List<Expense> getExpenses(
+    public List<ExpenseResponse> getExpenses(
+            @AuthenticationPrincipal Jwt jwt,
+
             @RequestParam(required = false)
             Integer year,
 
             @RequestParam(required = false)
-            Integer month) {
+            Integer month
+    ) {
+
+        Long userId =
+                getAuthenticatedUserId(jwt);
+
+        getAuthenticatedUser(userId);
+
+        List<Expense> expenses;
 
         if (year == null && month == null) {
-            return expenseRepository
-                    .findAllByOrderByExpenseDateDescIdDesc();
+
+            expenses =
+                    expenseRepository
+                            .findAllByUser_IdOrderByExpenseDateDescIdDesc(
+                                    userId
+                            );
+
+            return expenses
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
         }
 
         if (year == null) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Year is required when month is provided"
@@ -64,7 +120,10 @@ public class ExpenseController {
             if (month != null) {
 
                 YearMonth yearMonth =
-                        YearMonth.of(year, month);
+                        YearMonth.of(
+                                year,
+                                month
+                        );
 
                 startDate =
                         yearMonth.atDay(1);
@@ -75,17 +134,32 @@ public class ExpenseController {
             } else {
 
                 startDate =
-                        LocalDate.of(year, 1, 1);
+                        LocalDate.of(
+                                year,
+                                1,
+                                1
+                        );
 
                 endDate =
-                        LocalDate.of(year, 12, 31);
+                        LocalDate.of(
+                                year,
+                                12,
+                                31
+                        );
             }
 
-            return expenseRepository
-                    .findByExpenseDateBetweenOrderByExpenseDateDescIdDesc(
-                            startDate,
-                            endDate
-                    );
+            expenses =
+                    expenseRepository
+                            .findByUser_IdAndExpenseDateBetweenOrderByExpenseDateDescIdDesc(
+                                    userId,
+                                    startDate,
+                                    endDate
+                            );
+
+            return expenses
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
 
         } catch (DateTimeException exception) {
 
@@ -97,13 +171,34 @@ public class ExpenseController {
     }
 
     @PutMapping("/{id}")
-    public Expense updateExpense(
+    public ExpenseResponse updateExpense(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
-            @Valid @RequestBody Expense request) {
+            @Valid @RequestBody ExpenseRequest request
+    ) {
 
+        Long userId =
+                getAuthenticatedUserId(jwt);
+
+        getAuthenticatedUser(userId);
+
+        /*
+         * SECURITY:
+         *
+         * Query by both:
+         *
+         * expense ID
+         * authenticated user ID
+         *
+         * so one user cannot update another
+         * user's expense.
+         */
         Expense existing =
                 expenseRepository
-                        .findById(id)
+                        .findByIdAndUser_Id(
+                                id,
+                                userId
+                        )
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -112,51 +207,44 @@ public class ExpenseController {
                                         )
                         );
 
-        existing.setAmount(
-                request.getAmount()
+        applyRequest(
+                existing,
+                request
         );
 
-        existing.setCategory(
-                request.getCategory()
-        );
+        Expense savedExpense =
+                expenseRepository.save(existing);
 
-        existing.setMerchant(
-                request.getMerchant()
-        );
-
-        existing.setDescription(
-                request.getDescription()
-        );
-
-        existing.setExpenseDate(
-                request.getExpenseDate()
-        );
-
-        existing.setPaymentMethod(
-                request.getPaymentMethod()
-        );
-
-        existing.setNotes(
-                request.getNotes()
-        );
-
-        return expenseRepository.save(existing);
+        return toResponse(savedExpense);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteExpense(
-            @PathVariable Long id) {
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id
+    ) {
 
-        if (!expenseRepository.existsById(id)) {
+        Long userId =
+                getAuthenticatedUserId(jwt);
 
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Expense not found"
-            );
-        }
+        getAuthenticatedUser(userId);
 
-        expenseRepository.deleteById(id);
+        Expense expense =
+                expenseRepository
+                        .findByIdAndUser_Id(
+                                id,
+                                userId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Expense not found"
+                                        )
+                        );
+
+        expenseRepository.delete(expense);
     }
 
     @GetMapping("/categories")
@@ -165,5 +253,111 @@ public class ExpenseController {
         return Arrays.asList(
                 ExpenseCategory.values()
         );
+    }
+
+    private void applyRequest(
+            Expense expense,
+            ExpenseRequest request
+    ) {
+
+        expense.setAmount(
+                request.getAmount()
+        );
+
+        expense.setCategory(
+                request.getCategory()
+        );
+
+        expense.setMerchant(
+                request.getMerchant()
+        );
+
+        expense.setDescription(
+                request.getDescription()
+        );
+
+        expense.setExpenseDate(
+                request.getExpenseDate()
+        );
+
+        expense.setPaymentMethod(
+                request.getPaymentMethod()
+        );
+
+        expense.setNotes(
+                request.getNotes()
+        );
+    }
+
+    private ExpenseResponse toResponse(
+            Expense expense
+    ) {
+
+        return new ExpenseResponse(
+                expense.getId(),
+                expense.getAmount(),
+                expense.getCategory(),
+                expense.getMerchant(),
+                expense.getDescription(),
+                expense.getExpenseDate(),
+                expense.getPaymentMethod(),
+                expense.getNotes(),
+                expense.getCreatedAt()
+        );
+    }
+
+    private Long getAuthenticatedUserId(
+            Jwt jwt
+    ) {
+
+        if (jwt == null
+                || jwt.getSubject() == null
+                || jwt.getSubject().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authentication required"
+            );
+        }
+
+        try {
+
+            return Long.valueOf(
+                    jwt.getSubject()
+            );
+
+        } catch (NumberFormatException exception) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid authentication"
+            );
+        }
+    }
+
+    private User getAuthenticatedUser(
+            Long userId
+    ) {
+
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid authentication"
+                                        )
+                        );
+
+        if (!user.isEnabled()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid authentication"
+            );
+        }
+
+        return user;
     }
 }
