@@ -24,16 +24,47 @@
 
       </div>
 
-      <button
-        type="button"
-        class="avatar"
-        aria-label="Log out"
-        title="Log out"
-        (click)="logout()">
 
-        {{ userInitial }}
+      <div class="header-actions">
 
-      </button>
+        <div
+          class="avatar"
+          [attr.aria-label]="'User ' + userInitial"
+          title="Account">
+
+          {{ userInitial }}
+
+        </div>
+
+
+        <button
+          type="button"
+          class="logout-icon-button"
+          aria-label="Log out"
+          title="Log out"
+          (click)="logout()">
+
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true">
+
+            <path
+              d="M10 17l5-5-5-5">
+            </path>
+
+            <path
+              d="M15 12H3">
+            </path>
+
+            <path
+              d="M14 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4">
+            </path>
+
+          </svg>
+
+        </button>
+
+      </div>
 
     </header>
 
@@ -355,13 +386,36 @@
         <div class="transaction">
 
 
+          <!-- MERCHANT LOGO / CATEGORY FALLBACK -->
+
           <div class="transaction-icon">
 
-            {{
-            getCategoryIcon(
-            expense.category
-            )
-            }}
+            @if (
+            getTransactionMerchantImage(expense);
+            as merchantImage
+            ) {
+
+            <img
+              class="transaction-merchant-image"
+              [src]="merchantImage"
+              [alt]="
+                expense.merchant ||
+                getCategoryLabel(
+                  expense.category
+                )
+              ">
+
+            } @else {
+
+            <span>
+              {{
+                getCategoryIcon(
+                  expense.category
+                )
+              }}
+            </span>
+
+            }
 
           </div>
 
@@ -536,6 +590,7 @@
       <button
         type="button"
         class="close-button"
+        aria-label="Close"
         (click)="closeAddExpense()">
 
         ×
@@ -545,7 +600,9 @@
     </div>
 
 
-    <!-- AMOUNT -->
+    <!-- =========================================
+         AMOUNT
+         ========================================= -->
 
     <div class="amount-section">
 
@@ -572,7 +629,9 @@
     </div>
 
 
-    <!-- CATEGORY -->
+    <!-- =========================================
+         CATEGORY
+         ========================================= -->
 
     <div class="form-section">
 
@@ -618,7 +677,79 @@
     </div>
 
 
-    <!-- MERCHANT / DATE -->
+    <!-- =========================================
+         QUICK MERCHANTS
+         ========================================= -->
+
+    @if (quickMerchants.length > 0) {
+
+    <div class="quick-merchant-section">
+
+      <div class="quick-merchant-heading">
+
+        <div>
+
+          <label class="field-label">
+            Quick Merchant
+          </label>
+
+          <p>
+            Tap a place to fill the merchant automatically.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="quick-merchant-grid">
+
+        @for (
+        merchant of quickMerchants;
+        track merchant.key
+        ) {
+
+        <button
+          type="button"
+          class="quick-merchant-option"
+          [class.selected]="
+            isQuickMerchantSelected(
+              merchant
+            )
+          "
+          (click)="
+            selectQuickMerchant(
+              merchant
+            )
+          ">
+
+          <span class="quick-merchant-image-wrapper">
+
+            <img
+              class="quick-merchant-image"
+              [src]="merchant.image"
+              [alt]="merchant.label">
+
+          </span>
+
+          <span class="quick-merchant-label">
+            {{ merchant.label }}
+          </span>
+
+        </button>
+
+        }
+
+      </div>
+
+    </div>
+
+    }
+
+
+    <!-- =========================================
+         MERCHANT / DATE
+         ========================================= -->
 
     <div class="form-grid">
 
@@ -631,7 +762,8 @@
         <input
           type="text"
           placeholder="Kroger, Shell..."
-          [(ngModel)]="newExpense.merchant">
+          [(ngModel)]="newExpense.merchant"
+          (input)="onMerchantInput()">
 
       </div>
 
@@ -651,7 +783,9 @@
     </div>
 
 
-    <!-- PAYMENT -->
+    <!-- =========================================
+         PAYMENT
+         ========================================= -->
 
     <div class="form-field">
 
@@ -678,7 +812,9 @@
     </div>
 
 
-    <!-- DESCRIPTION -->
+    <!-- =========================================
+         DESCRIPTION
+         ========================================= -->
 
     <div class="form-field">
 
@@ -694,7 +830,9 @@
     </div>
 
 
-    <!-- NOTES -->
+    <!-- =========================================
+         NOTES
+         ========================================= -->
 
     <div class="form-field">
 
@@ -720,7 +858,9 @@
     }
 
 
-    <!-- DELETE -->
+    <!-- =========================================
+         DELETE
+         ========================================= -->
 
     @if (editingExpenseId !== null) {
 
@@ -741,7 +881,9 @@
     }
 
 
-    <!-- SAVE -->
+    <!-- =========================================
+         SAVE
+         ========================================= -->
 
     <button
       type="button"

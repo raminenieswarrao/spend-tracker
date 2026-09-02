@@ -16,40 +16,122 @@ ion-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  gap: 20px;
+
   margin-bottom: 28px;
 
   h1 {
     margin: 4px 0;
+
     font-size: 30px;
     font-weight: 750;
+
     letter-spacing: -0.8px;
+
     color: #111827;
   }
 }
 
 .eyebrow {
   margin: 0;
+
   font-size: 11px;
   font-weight: 700;
+
   letter-spacing: 1.5px;
+
   color: #6b7280;
 }
 
 .month {
   margin: 0;
+
   color: #6b7280;
+
   font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  flex-shrink: 0;
 }
 
 .avatar {
   width: 44px;
   height: 44px;
+
   border-radius: 50%;
+
   display: grid;
   place-items: center;
+
   background: #111827;
   color: white;
+
+  font-size: 14px;
   font-weight: 700;
+
+  flex-shrink: 0;
+
+  user-select: none;
+}
+
+.logout-icon-button {
+  width: 44px;
+  height: 44px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  background: white;
+  color: #6b7280;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+
+  svg {
+    width: 21px;
+    height: 21px;
+
+    fill: none;
+    stroke: currentColor;
+
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+@media (hover: hover) {
+
+  .logout-icon-button:hover {
+    background: #f3f4f6;
+
+    color: #111827;
+
+    border-color: #d1d5db;
+  }
 }
 
 /* =========================
@@ -58,6 +140,7 @@ ion-content {
 
 .balance-card {
   border-radius: 26px;
+
   padding: 26px;
 
   background: linear-gradient(
@@ -69,49 +152,71 @@ ion-content {
   color: white;
 
   box-shadow:
-    0 18px 40px rgba(17, 24, 39, 0.16);
+    0 18px 40px
+    rgba(17, 24, 39, 0.16);
 
   margin-bottom: 30px;
 
   h2 {
     margin: 6px 0 24px;
+
     font-size: 42px;
     font-weight: 750;
+
     letter-spacing: -1.5px;
   }
 }
 
 .card-label {
   margin: 0;
+
   font-size: 14px;
+
   opacity: 0.72;
 }
 
 .budget-row {
   display: flex;
   justify-content: space-between;
+
   font-size: 13px;
+
   margin-bottom: 10px;
 }
 
 .progress-track {
   width: 100%;
   height: 7px;
+
   border-radius: 20px;
+
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.16);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.16
+    );
 }
 
 .progress-value {
   height: 100%;
+
   border-radius: 20px;
+
   background: white;
-  transition: width 0.4s ease;
+
+  transition:
+    width 0.4s ease;
 }
 
 .budget-caption {
   margin: 10px 0 0;
+
   font-size: 12px;
+
   opacity: 0.6;
 }
 
@@ -127,16 +232,20 @@ ion-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   margin-bottom: 14px;
 
   h3 {
     margin: 0;
+
     font-size: 18px;
+
     color: #111827;
   }
 
   span {
     color: #9ca3af;
+
     font-size: 12px;
   }
 }
@@ -148,21 +257,27 @@ ion-content {
 .category-list,
 .transaction-card {
   background: white;
+
   border-radius: 22px;
+
   padding: 8px 18px;
 
   box-shadow:
-    0 8px 30px rgba(17, 24, 39, 0.05);
+    0 8px 30px
+    rgba(17, 24, 39, 0.05);
 }
 
 .category-row {
   display: flex;
   align-items: center;
+
   gap: 14px;
+
   padding: 14px 0;
 
   &:not(:last-child) {
-    border-bottom: 1px solid #f1f2f4;
+    border-bottom:
+      1px solid #f1f2f4;
   }
 }
 
@@ -170,6 +285,7 @@ ion-content {
 .transaction-icon {
   width: 42px;
   height: 42px;
+
   border-radius: 14px;
 
   display: grid;
@@ -178,6 +294,7 @@ ion-content {
   background: #f4f5f7;
 
   font-size: 19px;
+
   flex-shrink: 0;
 }
 
@@ -187,10 +304,12 @@ ion-content {
 
 .category-title-row {
   display: flex;
+
   justify-content: space-between;
   align-items: center;
 
   font-size: 14px;
+
   color: #374151;
 
   strong {
@@ -200,16 +319,21 @@ ion-content {
 
 .category-bar {
   margin-top: 8px;
+
   height: 4px;
 
   background: #f1f2f4;
+
   border-radius: 10px;
+
   overflow: hidden;
 }
 
 .category-bar-value {
   height: 100%;
+
   background: #111827;
+
   border-radius: 10px;
 }
 
@@ -220,27 +344,34 @@ ion-content {
 .transaction {
   display: flex;
   align-items: center;
+
   gap: 13px;
+
   padding: 14px 0;
 
   &:not(:last-child) {
-    border-bottom: 1px solid #f1f2f4;
+    border-bottom:
+      1px solid #f1f2f4;
   }
 }
 
 .transaction-details {
   display: flex;
   flex-direction: column;
+
   flex: 1;
 
   strong {
     color: #111827;
+
     font-size: 14px;
   }
 
   span {
     margin-top: 3px;
+
     font-size: 12px;
+
     color: #9ca3af;
   }
 }
@@ -248,6 +379,7 @@ ion-content {
 .transaction-amount {
   font-size: 14px;
   font-weight: 650;
+
   color: #111827;
 }
 
@@ -261,7 +393,8 @@ ion-content {
   bottom: 25px;
   left: 50%;
 
-  transform: translateX(-50%);
+  transform:
+    translateX(-50%);
 
   width: 62px;
   height: 62px;
@@ -276,7 +409,8 @@ ion-content {
   font-weight: 300;
 
   box-shadow:
-    0 14px 35px rgba(17, 24, 39, 0.28);
+    0 14px 35px
+    rgba(17, 24, 39, 0.28);
 
   cursor: pointer;
 
@@ -285,7 +419,9 @@ ion-content {
 
 .loading {
   display: flex;
+
   justify-content: center;
+
   padding: 100px;
 }
 
@@ -295,11 +431,14 @@ ion-content {
 
 .sheet-backdrop {
   position: fixed;
+
   inset: 0;
 
-  background: rgba(15, 23, 42, 0.38);
+  background:
+    rgba(15, 23, 42, 0.38);
 
-  backdrop-filter: blur(4px);
+  backdrop-filter:
+    blur(4px);
 
   z-index: 100;
 }
@@ -310,25 +449,31 @@ ion-content {
   left: 50%;
   bottom: 0;
 
-  transform: translateX(-50%);
+  transform:
+    translateX(-50%);
 
-  width: min(100%, 720px);
+  width:
+    min(100%, 720px);
+
   max-height: 92vh;
 
   overflow-y: auto;
 
   background: white;
 
-  border-radius: 28px 28px 0 0;
+  border-radius:
+    28px 28px 0 0;
 
-  padding: 12px 22px 32px;
+  padding:
+    12px 22px 32px;
 
   box-sizing: border-box;
 
   z-index: 101;
 
   box-shadow:
-    0 -20px 60px rgba(15, 23, 42, 0.18);
+    0 -20px 60px
+    rgba(15, 23, 42, 0.18);
 }
 
 .sheet-handle {
@@ -339,7 +484,8 @@ ion-content {
 
   background: #d1d5db;
 
-  margin: 0 auto 20px;
+  margin:
+    0 auto 20px;
 }
 
 .sheet-header {
@@ -355,6 +501,7 @@ ion-content {
     color: #111827;
 
     font-size: 26px;
+
     letter-spacing: -0.6px;
   }
 }
@@ -407,7 +554,8 @@ ion-content {
   display: flex;
   align-items: center;
 
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom:
+    1px solid #e5e7eb;
 
   padding-bottom: 10px;
 
@@ -468,7 +616,8 @@ ion-content {
 .category-option {
   min-height: 76px;
 
-  border: 1px solid #eceef1;
+  border:
+    1px solid #eceef1;
 
   border-radius: 16px;
 
@@ -480,6 +629,7 @@ ion-content {
 
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
 
@@ -495,7 +645,8 @@ ion-content {
     border 0.15s ease;
 
   &:active {
-    transform: scale(0.97);
+    transform:
+      scale(0.97);
   }
 
   &.selected {
@@ -509,6 +660,148 @@ ion-content {
 
 .option-icon {
   font-size: 20px;
+}
+
+/* =========================
+   QUICK MERCHANT PICKER
+   ========================= */
+
+.quick-merchant-section {
+  margin-bottom: 24px;
+
+  padding: 16px;
+
+  border:
+    1px solid #eceef1;
+
+  border-radius: 18px;
+
+  background: #fbfcfd;
+}
+
+.quick-merchant-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  margin-bottom: 13px;
+
+  .field-label {
+    margin-bottom: 3px;
+  }
+
+  p {
+    margin: 0;
+
+    color: #9ca3af;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+  }
+}
+
+.quick-merchant-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 9px;
+}
+
+.quick-merchant-option {
+  min-width: 0;
+
+  min-height: 94px;
+
+  padding: 10px 6px;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 16px;
+
+  background: white;
+
+  color: #374151;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:active {
+    transform:
+      scale(0.97);
+  }
+
+  &.selected {
+    border-color: #111827;
+
+    background: #f3f4f6;
+
+    box-shadow:
+      inset 0 0 0 1px #111827;
+  }
+}
+
+.quick-merchant-image-wrapper {
+  width: 52px;
+  height: 52px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 14px;
+
+  background: white;
+
+  overflow: hidden;
+}
+
+.quick-merchant-image {
+  display: block;
+
+  width: 42px;
+  height: 42px;
+
+  object-fit: contain;
+}
+
+.quick-merchant-label {
+  width: 100%;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  text-align: center;
+
+  color: #374151;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.quick-merchant-option.selected
+.quick-merchant-label {
+  color: #111827;
+
+  font-weight: 700;
 }
 
 /* =========================
@@ -543,7 +836,8 @@ ion-content {
   textarea {
     width: 100%;
 
-    border: 1px solid #e5e7eb;
+    border:
+      1px solid #e5e7eb;
 
     border-radius: 14px;
 
@@ -566,6 +860,7 @@ ion-content {
   select:focus,
   textarea:focus {
     border-color: #111827;
+
     background: white;
   }
 
@@ -596,6 +891,7 @@ ion-content {
   width: 100%;
 
   border: none;
+
   border-radius: 16px;
 
   background: #111827;
@@ -611,7 +907,309 @@ ion-content {
 
   &:disabled {
     opacity: 0.55;
+
     cursor: default;
+  }
+}
+
+/* =========================
+   MONTH / YEAR FILTER
+   ========================= */
+
+.period-section {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 14px;
+
+  margin-bottom: 22px;
+}
+
+.period-toggle {
+  display: flex;
+
+  background: #e9edf2;
+
+  border-radius: 14px;
+
+  padding: 4px;
+
+  button {
+    border: 0;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    padding: 9px 18px;
+
+    border-radius: 11px;
+
+    font-weight: 650;
+
+    cursor: pointer;
+  }
+
+  button.active {
+    background: #111827;
+
+    color: white;
+  }
+}
+
+.period-selectors {
+  display: flex;
+
+  gap: 8px;
+
+  select {
+    border:
+      1px solid #e5e7eb;
+
+    background: white;
+
+    color: #111827;
+
+    border-radius: 12px;
+
+    padding: 9px 12px;
+
+    outline: none;
+  }
+}
+
+/* =========================
+   ANALYTICS
+   ========================= */
+
+.analytics-card {
+  background: white;
+
+  border-radius: 22px;
+
+  padding: 22px;
+
+  box-shadow:
+    0 8px 30px
+    rgba(17, 24, 39, 0.05);
+}
+
+.donut-wrapper {
+  display: flex;
+
+  justify-content: center;
+
+  padding:
+    12px 0 26px;
+}
+
+.donut-chart {
+  width: 180px;
+  height: 180px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  position: relative;
+}
+
+.donut-chart::after {
+  content: '';
+
+  position: absolute;
+
+  width: 116px;
+  height: 116px;
+
+  border-radius: 50%;
+
+  background: white;
+}
+
+.donut-center {
+  position: relative;
+
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  strong {
+    color: #111827;
+
+    font-size: 22px;
+  }
+
+  span {
+    color: #9ca3af;
+
+    font-size: 12px;
+
+    margin-top: 3px;
+  }
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+
+  margin-top: 4px;
+}
+
+.category-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+}
+
+/* =========================
+   TRANSACTION ACTIONS
+   ========================= */
+
+.transaction-main {
+  flex: 1;
+
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  border: 0;
+
+  background: transparent;
+
+  padding: 0;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.edit-transaction-button {
+  width: 40px;
+  height: 40px;
+
+  border: 0;
+
+  border-radius: 12px;
+
+  background: #f4f5f7;
+
+  color: #6b7280;
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+/* =========================
+   DELETE
+   ========================= */
+
+.delete-button {
+  width: 100%;
+
+  border:
+    1px solid #fecdd3;
+
+  border-radius: 16px;
+
+  background: #fff1f2;
+
+  color: #be123c;
+
+  padding: 15px;
+
+  margin-bottom: 10px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+/* =========================
+   EMPTY STATE
+   ========================= */
+
+.empty-card {
+  background: white;
+
+  border-radius: 22px;
+
+  padding:
+    32px 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 6px;
+
+  color: #111827;
+
+  box-shadow:
+    0 8px 30px
+    rgba(17, 24, 39, 0.05);
+
+  span {
+    color: #9ca3af;
+
+    font-size: 12px;
+  }
+}
+
+.empty-icon {
+  font-size: 28px;
+
+  margin-bottom: 4px;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.app-footer {
+  margin-top: 42px;
+
+  padding:
+    24px 0 12px;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+
+  text-align: center;
+
+  strong {
+    color: #6b7280;
+
+    font-weight: 650;
   }
 }
 
@@ -634,6 +1232,14 @@ ion-content {
   }
 }
 
+@media (max-width: 600px) {
+
+  .quick-merchant-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 480px) {
 
   .page-shell {
@@ -641,9 +1247,66 @@ ion-content {
       24px 16px 110px;
   }
 
+  .top-section {
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+  .header-actions {
+    gap: 7px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+
+    font-size: 13px;
+  }
+
+  .logout-icon-button {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 12px;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
   .category-grid {
     grid-template-columns:
       repeat(3, 1fr);
+  }
+
+  .quick-merchant-section {
+    padding: 13px;
+  }
+
+  .quick-merchant-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+
+    gap: 8px;
+  }
+
+  .quick-merchant-option {
+    min-height: 88px;
+
+    padding:
+      8px 5px;
+  }
+
+  .quick-merchant-image-wrapper {
+    width: 48px;
+    height: 48px;
+  }
+
+  .quick-merchant-image {
+    width: 38px;
+    height: 38px;
   }
 
   .form-grid {
@@ -653,244 +1316,13 @@ ion-content {
 
   .expense-sheet {
     padding-left: 18px;
+
     padding-right: 18px;
   }
-}
-
-/* =========================
-   MONTH / YEAR FILTER
-   ========================= */
-
-.period-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.period-toggle {
-  display: flex;
-  background: #e9edf2;
-  border-radius: 14px;
-  padding: 4px;
-
-  button {
-    border: 0;
-    background: transparent;
-    color: #6b7280;
-    padding: 9px 18px;
-    border-radius: 11px;
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  button.active {
-    background: #111827;
-    color: white;
-  }
-}
-
-.period-selectors {
-  display: flex;
-  gap: 8px;
-
-  select {
-    border: 1px solid #e5e7eb;
-    background: white;
-    color: #111827;
-    border-radius: 12px;
-    padding: 9px 12px;
-    outline: none;
-  }
-}
-
-
-/* =========================
-   ANALYTICS
-   ========================= */
-
-.analytics-card {
-  background: white;
-  border-radius: 22px;
-  padding: 22px;
-
-  box-shadow:
-    0 8px 30px rgba(17, 24, 39, 0.05);
-}
-
-.donut-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 12px 0 26px;
-}
-
-.donut-chart {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-
-  display: grid;
-  place-items: center;
-
-  position: relative;
-}
-
-.donut-chart::after {
-  content: '';
-  position: absolute;
-
-  width: 116px;
-  height: 116px;
-
-  border-radius: 50%;
-
-  background: white;
-}
-
-.donut-center {
-  position: relative;
-  z-index: 2;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  strong {
-    color: #111827;
-    font-size: 22px;
-  }
-
-  span {
-    color: #9ca3af;
-    font-size: 12px;
-    margin-top: 3px;
-  }
-}
-
-.category-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  color: #9ca3af;
-  font-size: 11px;
-
-  margin-top: 4px;
-}
-
-.category-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-
-/* =========================
-   TRANSACTION ACTIONS
-   ========================= */
-
-.transaction-main {
-  flex: 1;
-
-  min-width: 0;
-
-  display: flex;
-  align-items: center;
-
-  border: 0;
-  background: transparent;
-
-  padding: 0;
-
-  text-align: left;
-
-  cursor: pointer;
-}
-
-.edit-transaction-button {
-  width: 40px;
-  height: 40px;
-
-  border: 0;
-  border-radius: 12px;
-
-  background: #f4f5f7;
-
-  color: #6b7280;
-
-  font-size: 20px;
-
-  cursor: pointer;
-}
-
-
-/* =========================
-   DELETE
-   ========================= */
-
-.delete-button {
-  width: 100%;
-
-  border: 1px solid #fecdd3;
-  border-radius: 16px;
-
-  background: #fff1f2;
-  color: #be123c;
-
-  padding: 15px;
-
-  margin-bottom: 10px;
-
-  font-size: 14px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.5;
-  }
-}
-
-
-/* =========================
-   EMPTY STATE
-   ========================= */
-
-.empty-card {
-  background: white;
-
-  border-radius: 22px;
-
-  padding: 32px 20px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  gap: 6px;
-
-  color: #111827;
-
-  box-shadow:
-    0 8px 30px rgba(17, 24, 39, 0.05);
-
-  span {
-    color: #9ca3af;
-    font-size: 12px;
-  }
-}
-
-.empty-icon {
-  font-size: 28px;
-  margin-bottom: 4px;
-}
-
-
-@media (max-width: 480px) {
 
   .period-section {
     flex-direction: column;
+
     align-items: stretch;
   }
 
@@ -908,29 +1340,5 @@ ion-content {
     select {
       flex: 1;
     }
-  }
-}
-
-/* =========================
-   FOOTER
-   ========================= */
-
-.app-footer {
-  margin-top: 42px;
-  padding: 24px 0 12px;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-
-  color: #9ca3af;
-
-  font-size: 11px;
-  text-align: center;
-
-  strong {
-    color: #6b7280;
-    font-weight: 650;
   }
 }

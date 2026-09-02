@@ -1,8 +1,12 @@
 # Spend Tracker — Technical Documentation
 
-Spend Tracker is a lightweight personal expense-tracking application for recording day-to-day spending, reviewing monthly and yearly totals, and understanding where money is being spent by category.
+Spend Tracker is a secure personal expense-tracking application for recording day-to-day spending, reviewing monthly and yearly totals, understanding spending by category, and quickly recording common merchants.
 
-The MVP is intentionally simple: **Ionic Angular frontend → Spring Boot REST API → Supabase PostgreSQL**.
+The current architecture is:
+
+**Ionic Angular frontend → Spring Boot REST API → Supabase PostgreSQL**
+
+The frontend and backend are deployed together as a single Render Web Service.
 
 ---
 
@@ -20,25 +24,31 @@ The MVP is intentionally simple: **Ionic Angular frontend → Spring Boot REST A
 ┌─────────────────────────────────────────────────────────────┐
 │                    Ionic Angular Frontend                   │
 │                                                             │
+│  • Login / Registration                                     │
 │  • Dashboard                                                │
 │  • Month / Year filters                                     │
 │  • Category donut chart                                     │
-│  • Add Expense sheet                                        │
-│  • Edit / Delete transaction                                │
+│  • Add / Edit Expense sheet                                 │
+│  • Quick Merchant selection                                 │
+│  • Merchant logos                                           │
+│  • Logout                                                   │
 └────────────────────────────┬────────────────────────────────┘
                              │
-                        REST /api/*
+                         /api/*
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Spring Boot Backend                      │
 │                                                             │
+│  Spring Security                                            │
+│  JWT authentication                                         │
+│  HttpOnly authentication cookies                            │
+│  CSRF protection                                            │
+│                                                             │
+│  AuthController                                             │
 │  ExpenseController                                          │
-│          │                                                  │
-│          ▼                                                  │
-│  ExpenseRepository                                          │
-│          │                                                  │
-│          ▼                                                  │
+│  HealthController                                           │
+│                                                             │
 │  Spring Data JPA / Hibernate                                │
 └────────────────────────────┬────────────────────────────────┘
                              │
@@ -46,13 +56,17 @@ The MVP is intentionally simple: **Ionic Angular frontend → Spring Boot REST A
 ┌─────────────────────────────────────────────────────────────┐
 │                    Supabase PostgreSQL                      │
 │                                                             │
-│                         expenses                            │
+│  users                                                      │
+│  refresh_tokens                                             │
+│  expenses                                                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Production Deployment Architecture
+---
 
-The frontend and backend are deployed together as a single application.
+## 🚀 Production Deployment Architecture
+
+The frontend and backend are deployed together.
 
 ```text
                         GitHub
@@ -64,7 +78,7 @@ The frontend and backend are deployed together as a single application.
               │                         │
               ▼                         ▼
       Ionic Angular Build        Spring Boot API
-       static HTML/JS/CSS         /api/expenses
+       static HTML/JS/CSS             /api/*
               │                         │
               └────────────┬────────────┘
                            │
@@ -72,87 +86,380 @@ The frontend and backend are deployed together as a single application.
                   Supabase PostgreSQL
 ```
 
-### Request Flow
+Production URL:
 
-1. The user opens the Spend Tracker application.
-2. Ionic Angular loads the selected month or year.
-3. The frontend calls the Spring Boot REST API.
-4. Spring Boot validates the request.
-5. Spring Data JPA queries Supabase PostgreSQL.
-6. Expense records are returned to Angular.
-7. Angular calculates the visible dashboard totals and category percentages.
-8. The UI renders the summary card, category donut, and transaction list.
+```text
+https://spend-tracker-4hm4.onrender.com
+```
 
-> The frontend does **not** connect directly to PostgreSQL.
+The Angular application and Spring Boot API share the same production origin.
+
+This simplifies:
+
+- Authentication cookies
+- CSRF handling
+- CORS
+- Deployment
+- API URL configuration
 
 ---
 
-## 🗄 Database Architecture
+# 🔐 Authentication Architecture
 
-### Current Database Model
+Spend Tracker now supports secure multi-user authentication.
 
-The personal MVP currently requires one primary application table.
+Authentication uses:
 
 ```text
-┌───────────────────────────┐
-│         expenses          │
-├───────────────────────────┤
-│ id                        │
-│ amount                    │
-│ category                  │
-│ merchant                  │
-│ description               │
-│ expense_date              │
-│ payment_method            │
-│ notes                     │
-│ created_at                │
-└───────────────────────────┘
+Email + Password
+       │
+       ▼
+Spring Security
+       │
+       ├── BCrypt password hashing
+       │
+       ├── JWT access token
+       │
+       └── Refresh token
 ```
 
-### Table Summary
+Tokens are not stored in browser local storage.
 
-| Table | Purpose | Important Fields |
+They are stored in cookies.
+
+---
+
+## Access Token
+
+The access token is a JWT.
+
+Properties:
+
+```text
+Lifetime: 15 minutes
+Algorithm: HMAC SHA-256
+Issuer: spend-tracker-api
+```
+
+The JWT contains:
+
+```text
+subject = user ID
+role
+jti
+issued time
+expiration time
+```
+
+Sensitive user information and passwords are not included.
+
+The access token is stored in:
+
+```text
+access_token
+```
+
+Cookie configuration:
+
+```text
+HttpOnly = true
+Path = /
+SameSite = Lax
+Secure = configurable
+```
+
+Production uses:
+
+```text
+APP_SECURITY_COOKIE_SECURE=true
+```
+
+---
+
+## Refresh Token
+
+Refresh tokens are:
+
+```text
+32 random bytes
+Base64 URL encoded
+```
+
+Only a SHA-256 hash of the refresh token is stored in PostgreSQL.
+
+The browser stores the raw token in:
+
+```text
+refresh_token
+```
+
+Configuration:
+
+```text
+HttpOnly = true
+Path = /api/auth
+SameSite = Lax
+Lifetime = 7 days
+```
+
+Refresh tokens are rotated whenever they are used.
+
+The previous token becomes revoked.
+
+---
+
+## Refresh Token Replay Protection
+
+If an already-revoked refresh token is presented again:
+
+```text
+revoked refresh token detected
+        │
+        ▼
+possible token replay
+        │
+        ▼
+revoke active refresh tokens for user
+```
+
+This provides protection against stolen refresh-token reuse.
+
+---
+
+## Password Security
+
+Passwords are hashed using:
+
+```text
+BCrypt
+strength = 12
+```
+
+Raw passwords are never stored.
+
+---
+
+## Login Protection
+
+Failed login attempts are tracked.
+
+Current behavior:
+
+```text
+5 failed attempts
+      │
+      ▼
+Account locked
+      │
+      ▼
+15 minutes
+```
+
+Authentication failures return a generic response:
+
+```text
+Invalid email or password.
+```
+
+This prevents revealing whether a particular email exists during login.
+
+---
+
+# 🛡 CSRF Protection
+
+Because authentication uses cookies, state-changing requests are protected with CSRF tokens.
+
+The frontend requests:
+
+```http
+GET /api/auth/csrf
+```
+
+The backend returns the CSRF token.
+
+The frontend then sends it through:
+
+```text
+X-XSRF-TOKEN
+```
+
+for operations such as:
+
+```text
+POST expense
+PUT expense
+DELETE expense
+POST refresh
+POST logout
+```
+
+---
+
+# 👤 User Data Isolation
+
+Every expense belongs to an authenticated user.
+
+```text
+users
+  │
+  └── expenses
+        user_id
+```
+
+The backend obtains the user ID from the authenticated JWT.
+
+The frontend never decides ownership.
+
+For example, expense creation works conceptually as:
+
+```text
+JWT
+ │
+ ▼
+authenticated user ID
+ │
+ ▼
+Expense.user = authenticated user
+```
+
+The client does not send a trusted `userId`.
+
+---
+
+## Cross-User Protection
+
+Expense queries use the authenticated user ID.
+
+Examples:
+
+```text
+findAllByUser_Id...
+findByIdAndUser_Id...
+```
+
+Therefore:
+
+```text
+User A cannot read User B expense
+User A cannot edit User B expense
+User A cannot delete User B expense
+```
+
+Cross-user resource access behaves as if the expense does not exist.
+
+---
+
+# 🗄 Database Architecture
+
+The application currently uses three primary tables.
+
+```text
+┌───────────────────────┐
+│        users          │
+├───────────────────────┤
+│ id                    │
+│ name                  │
+│ email                 │
+│ password_hash         │
+│ role                  │
+│ enabled               │
+│ email_verified        │
+│ failed_login_attempts │
+│ locked_until          │
+│ created_at            │
+│ updated_at            │
+└───────────┬───────────┘
+            │
+            │
+      ┌─────┴────────────┐
+      ▼                  ▼
+┌───────────────┐  ┌─────────────────┐
+│   expenses    │  │ refresh_tokens  │
+├───────────────┤  ├─────────────────┤
+│ id            │  │ id              │
+│ user_id       │  │ user_id         │
+│ amount        │  │ token_hash      │
+│ category      │  │ expires_at      │
+│ merchant      │  │ revoked         │
+│ description   │  │ created_at      │
+│ expense_date  │  │ revoked_at      │
+│ payment_method│  └─────────────────┘
+│ notes         │
+│ created_at    │
+└───────────────┘
+```
+
+---
+
+## `users`
+
+Stores application users.
+
+Important fields:
+
+| Column | Purpose |
+|---|---|
+| `id` | Primary key |
+| `name` | User display name |
+| `email` | Unique login email |
+| `password_hash` | BCrypt password hash |
+| `role` | USER or ADMIN |
+| `enabled` | Account enabled state |
+| `email_verified` | Email verification state |
+| `failed_login_attempts` | Login protection |
+| `locked_until` | Temporary account lock |
+| `created_at` | Creation timestamp |
+| `updated_at` | Update timestamp |
+
+---
+
+## `refresh_tokens`
+
+Stores refresh-token hashes.
+
+| Column | Purpose |
+|---|---|
+| `id` | Primary key |
+| `user_id` | Token owner |
+| `token_hash` | SHA-256 token hash |
+| `expires_at` | Expiration time |
+| `revoked` | Revocation state |
+| `created_at` | Creation timestamp |
+| `revoked_at` | Revocation timestamp |
+
+Raw refresh tokens are never stored.
+
+---
+
+## `expenses`
+
+Stores user expense records.
+
+| Column | Java Type | Purpose |
 |---|---|---|
-| `expenses` | Stores every recorded spending transaction | `id`, `amount`, `category`, `merchant`, `expense_date`, `payment_method`, `created_at` |
+| `id` | `Long` | Primary key |
+| `user_id` | `User` | Expense owner |
+| `amount` | `BigDecimal` | Expense amount |
+| `category` | `ExpenseCategory` | Expense category |
+| `merchant` | `String` | Merchant name |
+| `description` | `String` | Optional description |
+| `expense_date` | `LocalDate` | Expense date |
+| `payment_method` | `String` | Payment method |
+| `notes` | `String` | Optional notes |
+| `created_at` | `OffsetDateTime` | Creation timestamp |
 
-### `expenses` Table
-
-| Column | Java Type | Database Purpose | Required |
-|---|---|---|---|
-| `id` | `Long` | Primary key | Yes |
-| `amount` | `BigDecimal` | Expense amount | Yes |
-| `category` | `ExpenseCategory` | Spending category stored as text | Yes |
-| `merchant` | `String` | Store, company, or merchant name | No |
-| `description` | `String` | Short expense description | No |
-| `expense_date` | `LocalDate` | Date the spending occurred | Yes |
-| `payment_method` | `String` | Credit card, cash, Apple Pay, etc. | No |
-| `notes` | `String` | Optional user notes | No |
-| `created_at` | `OffsetDateTime` | Record creation timestamp | Yes |
-
-### Entity Constraints
-
-Current `Expense` validation includes:
+Important indexes include:
 
 ```text
-amount > 0
-category required
-expenseDate required
+user_id
+user_id + expense_date
 ```
-
-The amount column is stored with:
-
-```text
-precision = 12
-scale = 2
-```
-
-This supports normal personal-finance values while preserving cents accurately.
 
 ---
 
-## 🧾 Expense Categories
+# 🧾 Expense Categories
 
-Categories are currently represented by the backend `ExpenseCategory` enum rather than a database table.
+Current backend categories:
 
 | Enum Value | UI Label |
 |---|---|
@@ -174,22 +481,13 @@ Categories are currently represented by the backend `ExpenseCategory` enum rathe
 | `FEES_AND_TAXES` | Fees & Taxes |
 | `OTHER` | Other |
 
-### Category Design Decision
-
-Using a Java enum keeps the MVP simple because:
-
-1. Categories are fixed.
-2. No category-management table is required.
-3. Frontend and backend validation remain predictable.
-4. Category values can be stored as readable PostgreSQL strings.
-
-If user-defined categories are introduced later, this should be migrated to a `categories` table.
+Categories remain code-based rather than database-managed.
 
 ---
 
-## 💳 Supported Payment Methods
+# 💳 Payment Methods
 
-The current frontend offers:
+Current frontend values:
 
 ```text
 Credit Card
@@ -200,11 +498,255 @@ Bank Transfer
 Other
 ```
 
-Payment method is currently stored as text in the expense record.
+---
+
+# ⚡ Quick Merchant Selection
+
+The Add Expense form supports category-specific Quick Merchants.
+
+Example:
+
+```text
+Food & Dining
+      │
+      ▼
+McDonald's
+Chick-fil-A
+Chipotle
+Starbucks
+Subway
+Taco Bell
+Other
+```
+
+Selecting:
+
+```text
+McDonald's
+```
+
+automatically fills:
+
+```text
+merchant = McDonald's
+```
+
+The Merchant input remains editable.
 
 ---
 
-## 🔌 API Reference
+## Food & Dining Merchants
+
+Current configured merchants:
+
+```text
+McDonald's
+Chick-fil-A
+Chipotle
+Starbucks
+Subway
+Taco Bell
+Other
+```
+
+Merchant images are stored under:
+
+```text
+frontend/src/assets/icon/food/
+```
+
+---
+
+## Car / Fuel Merchants
+
+Current configured merchants:
+
+```text
+Shell
+BP
+Speedway
+Exxon
+Marathon
+Kroger Fuel
+Meijer
+QuikTrip
+Sheetz
+Other
+```
+
+Merchant assets are stored under:
+
+```text
+frontend/src/assets/icon/fuel/
+```
+
+---
+
+# 🖼 Merchant Logo Fallback
+
+Transaction rows can resolve a merchant image from the Quick Merchant configuration.
+
+Example:
+
+```text
+Food & Dining + McDonald's
+        │
+        ▼
+mcdonalds.png
+```
+
+For manually entered merchants:
+
+```text
+Food & Dining + Namaste India
+        │
+        ▼
+No predefined merchant match
+        │
+        ▼
+Food "Other" image
+```
+
+Fuel works the same way:
+
+```text
+CAR + Shell
+→ Shell image
+
+CAR + Local Fuel Station
+→ Fuel Other image
+```
+
+For categories where Quick Merchants have not yet been configured, the normal category emoji remains the fallback.
+
+---
+
+# 🧩 Quick Merchant Architecture
+
+Merchant definitions are intentionally separated from `home.page.ts`.
+
+```text
+home/
+│
+├── config/
+│   └── merchants.config.ts
+│
+├── models/
+│   └── home.models.ts
+│
+├── home.page.ts
+├── home.page.html
+└── home.page.scss
+```
+
+`merchants.config.ts` stores merchant configuration and merchant lookup helpers.
+
+This prevents `home.page.ts` from continuously growing as new merchants are introduced.
+
+Important helper functions include:
+
+```text
+getQuickMerchants()
+getQuickMerchantByName()
+getOtherMerchant()
+getMerchantImage()
+```
+
+---
+
+# 🔌 Authentication API
+
+Base path:
+
+```text
+/api/auth
+```
+
+---
+
+## Register
+
+```http
+POST /api/auth/register
+```
+
+Request:
+
+```json
+{
+  "name": "Example User",
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "confirmPassword": "SecurePassword123!"
+}
+```
+
+---
+
+## Login
+
+```http
+POST /api/auth/login
+```
+
+Request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+
+Successful login creates authentication cookies.
+
+---
+
+## Current User
+
+```http
+GET /api/auth/me
+```
+
+Requires a valid access token.
+
+Returns the currently authenticated user's public information.
+
+---
+
+## CSRF Token
+
+```http
+GET /api/auth/csrf
+```
+
+Returns CSRF token information used by the frontend.
+
+---
+
+## Refresh Session
+
+```http
+POST /api/auth/refresh
+```
+
+Uses the refresh-token cookie.
+
+The old refresh token is revoked and replaced.
+
+---
+
+## Logout
+
+```http
+POST /api/auth/logout
+```
+
+Revokes the refresh token and clears authentication cookies.
+
+---
+
+# 🔌 Expense API
 
 Base path:
 
@@ -212,298 +754,182 @@ Base path:
 /api/expenses
 ```
 
-### Get All Expenses
+All expense operations require authentication.
+
+All results are scoped to the authenticated user.
+
+---
+
+## Get Expenses
 
 ```http
 GET /api/expenses
 ```
 
-Returns all stored transactions ordered by expense date descending.
+---
 
-### Get Monthly Expenses
+## Monthly Expenses
 
 ```http
-GET /api/expenses?year=2026&month=8
+GET /api/expenses?year=2026&month=9
 ```
 
-Example result scope:
+Returns the authenticated user's expenses for the selected month.
 
-```text
-2026-08-01 through 2026-08-31
-```
+---
 
-### Get Yearly Expenses
+## Yearly Expenses
 
 ```http
 GET /api/expenses?year=2026
 ```
 
-Example result scope:
+Returns the authenticated user's expenses for the selected year.
 
-```text
-2026-01-01 through 2026-12-31
-```
+---
 
-### Create Expense
+## Create Expense
 
 ```http
 POST /api/expenses
-Content-Type: application/json
 ```
 
 Example:
 
 ```json
 {
-  "amount": 63.42,
-  "category": "GROCERIES",
-  "merchant": "Kroger",
-  "description": "Weekly groceries",
-  "expenseDate": "2026-08-22",
-  "paymentMethod": "Credit Card",
-  "notes": "First expense"
-}
-```
-
-### Update Expense
-
-```http
-PUT /api/expenses/{id}
-Content-Type: application/json
-```
-
-Example:
-
-```json
-{
-  "amount": 19.98,
-  "category": "CAR",
-  "merchant": "Fuel",
-  "description": "Fuel",
-  "expenseDate": "2026-08-22",
+  "amount": 18.54,
+  "category": "FOOD_AND_DINING",
+  "merchant": "Namaste India",
+  "description": "",
+  "expenseDate": "2026-09-01",
   "paymentMethod": "Credit Card",
   "notes": ""
 }
 ```
 
-### Delete Expense
+The backend determines the owner from authentication.
+
+The request does not contain a trusted user ID.
+
+---
+
+## Update Expense
+
+```http
+PUT /api/expenses/{id}
+```
+
+Only the owner can update the expense.
+
+---
+
+## Delete Expense
 
 ```http
 DELETE /api/expenses/{id}
 ```
 
-Successful deletion:
+Only the owner can delete the expense.
+
+Successful response:
 
 ```text
 204 No Content
 ```
 
-### Get Categories
+---
+
+# ❤️ Health Endpoint
+
+Render uses:
 
 ```http
-GET /api/expenses/categories
+GET /api/health
 ```
 
-Returns the supported backend enum values.
+Expected response:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+This endpoint is publicly accessible so Render can verify application health without authentication.
 
 ---
 
-## 🔄 Expense CRUD Flow
+# 📊 Dashboard Analytics
 
-### Add Expense
+Angular calculates dashboard analytics from the authenticated user's filtered expenses.
 
-```text
-User taps +
-    │
-    ▼
-Add Expense sheet
-    │
-    ├── Amount
-    ├── Category
-    ├── Merchant
-    ├── Date
-    ├── Payment Method
-    ├── Description
-    └── Notes
-    │
-    ▼
-Frontend validation
-    │
-    ▼
-POST /api/expenses
-    │
-    ▼
-Spring Boot validation
-    │
-    ▼
-Supabase PostgreSQL
-    │
-    ▼
-Reload selected period
-    │
-    ▼
-Dashboard updates
-```
+---
 
-### Edit Expense
+## Total Spending
 
 ```text
-Transaction
-    │
-    ▼
-Tap transaction / ...
-    │
-    ▼
-Edit Expense sheet
-    │
-    ▼
-PUT /api/expenses/{id}
-    │
-    ▼
-Database update
-    │
-    ▼
-Reload selected period
-```
-
-### Delete Expense
-
-```text
-Edit Expense
-    │
-    ▼
-Delete Expense
-    │
-    ▼
-Confirmation
-    │
-    ▼
-DELETE /api/expenses/{id}
-    │
-    ▼
-Reload selected period
+totalSpent =
+    sum(expense.amount)
 ```
 
 ---
 
-## 📊 Monthly and Yearly Filtering
-
-The dashboard supports two period modes:
+## Category Totals
 
 ```text
-Month
-Year
-```
-
-### Month Mode
-
-Month mode sends:
-
-```http
-GET /api/expenses?year={year}&month={month}
-```
-
-The backend converts the year/month into:
-
-```text
-startDate = first day of month
-endDate   = last day of month
-```
-
-Example:
-
-```text
-August 2026
-
-startDate = 2026-08-01
-endDate   = 2026-08-31
-```
-
-### Year Mode
-
-Year mode sends:
-
-```http
-GET /api/expenses?year={year}
-```
-
-The backend converts the year into:
-
-```text
-startDate = January 1
-endDate   = December 31
+categoryTotal =
+    sum(expenses belonging to category)
 ```
 
 ---
 
-## 📈 Dashboard Analytics
-
-The current frontend calculates analytics from the filtered transaction collection.
-
-### Total Spending
-
-```text
-totalSpent = sum(expense.amount)
-```
-
-### Category Total
-
-For every category:
-
-```text
-categoryTotal = sum(expenses in category)
-```
-
-### Category Percentage
+## Category Percentage
 
 ```text
 categoryPercentage =
-    categoryTotal / totalSpent * 100
+    categoryTotal
+    / totalSpent
+    * 100
 ```
 
-### Donut Chart
+---
 
-The current category chart uses a CSS:
+## Donut Chart
+
+The donut uses:
 
 ```text
 conic-gradient(...)
 ```
 
-Each visible category receives a configured UI color and contributes a percentage slice to the donut.
+Category colors are configured in Angular.
 
-Example:
+---
 
-```text
-Total: $88.39
+# 💰 Budget
 
-Groceries      $63.42    72%
-Car            $19.98    23%
-Entertainment   $4.99     6%
-```
-
-### Budget
-
-The current MVP uses:
+Current monthly budget:
 
 ```text
-Monthly budget = $2,500
+$2,500
 ```
 
-This value is currently frontend configuration, not persisted in the database.
+This is currently configured in the frontend.
 
-Year-mode budget is calculated as:
+Year mode uses:
 
 ```text
 monthlyBudget * 12
 ```
 
-> A configurable budget/settings table is a future enhancement.
+Budget configuration is not yet persisted.
 
 ---
 
-## 🖥 Frontend Architecture
+# 🖥 Frontend Architecture
 
-### Technology
+Technology:
 
 ```text
 Ionic Angular 9
@@ -514,134 +940,265 @@ Angular HttpClient
 Angular Forms
 ```
 
-### Frontend Responsibilities
+Frontend responsibilities:
 
-- Display monthly/yearly filters
-- Display total spending
-- Display remaining budget
-- Calculate visible category totals
-- Render category donut
-- Render transactions
-- Add new expenses
-- Edit existing expenses
-- Delete expenses
-- Call Spring Boot REST endpoints
-- Switch API URL between local and production modes
+- Registration
+- Login
+- Session restoration
+- Logout
+- CSRF handling
+- Month/year selection
+- Expense dashboard
+- Analytics
+- Add expense
+- Edit expense
+- Delete expense
+- Quick Merchant selection
+- Merchant image selection
+- Protected frontend routes
 
-### API URL Behavior
+---
+
+## Frontend API URL Behavior
 
 Development:
 
 ```text
-http://localhost:8080/api/expenses
+http://localhost:8080/api/*
 ```
 
 Production:
 
 ```text
-/api/expenses
+/api/*
 ```
 
-This allows the frontend and backend to share the same Render domain in production.
+Production therefore uses the same origin as the Angular application.
 
 ---
 
-## ☕ Backend Architecture
+# 🔐 Frontend Authentication
 
-### Technology
+Authentication logic lives in:
+
+```text
+services/auth.service.ts
+```
+
+The service:
+
+```text
+login
+register
+get current user
+restore session
+refresh session
+logout
+```
+
+All relevant requests use:
+
+```text
+withCredentials: true
+```
+
+JWT tokens are not stored in:
+
+```text
+localStorage
+sessionStorage
+```
+
+---
+
+# 🛡 Route Protection
+
+The Home page is protected by:
+
+```text
+guards/auth.guard.ts
+```
+
+Unauthenticated users attempting to access:
+
+```text
+/home
+```
+
+are redirected to:
+
+```text
+/login
+```
+
+---
+
+# ☕ Backend Architecture
+
+Technology:
 
 ```text
 Java 21
-Spring Boot
+Spring Boot 4
+Spring Security
 Spring Web
 Spring Data JPA
 Hibernate
 Bean Validation
-PostgreSQL JDBC Driver
+PostgreSQL
 Maven Wrapper
 ```
 
-### Backend Responsibilities
+Backend responsibilities:
 
-- REST API routing
-- Input validation
+- Registration
+- Authentication
+- Authorization
+- JWT creation and validation
+- Refresh-token rotation
+- CSRF validation
+- Account lockout
+- User-scoped expense CRUD
 - PostgreSQL persistence
-- Month/year date-range filtering
-- Expense creation
-- Expense update
-- Expense deletion
-- Category exposure
-- Production static frontend hosting
+- Static Angular hosting
+- SPA route forwarding
+- Production health checks
 
 ---
 
-## 🧩 Backend Components
+# 🧩 Important Backend Components
 
-| File | Responsibility |
-|---|---|
-| `SpendTrackerApplication.java` | Spring Boot application entry point |
-| `Expense.java` | JPA entity for expense records |
-| `ExpenseCategory.java` | Supported expense categories |
-| `ExpenseRepository.java` | JPA persistence and date-range queries |
-| `ExpenseController.java` | Expense REST endpoints |
-| `CorsConfig.java` | Local frontend/backend CORS configuration |
-| `SpaController.java` | Forwards frontend routes to `index.html` |
-| `application.properties` | Runtime/database configuration |
+```text
+SpendTrackerApplication.java
+
+config/
+    PasswordConfig.java
+    JwtConfig.java
+    SecurityConfig.java
+
+controller/
+    AuthController.java
+    ExpenseController.java
+    HealthController.java
+    SpaController.java
+
+dto/
+    RegisterRequest.java
+    LoginRequest.java
+    AuthResponse.java
+    LoginResult.java
+    RefreshResult.java
+    ExpenseRequest.java
+    ExpenseResponse.java
+
+exception/
+    InvalidCredentialsException.java
+    GlobalExceptionHandler.java
+
+model/
+    User.java
+    Role.java
+    RefreshToken.java
+    Expense.java
+    ExpenseCategory.java
+
+repository/
+    UserRepository.java
+    RefreshTokenRepository.java
+    ExpenseRepository.java
+
+security/
+    CookieBearerTokenResolver.java
+    JwtService.java
+
+service/
+    AuthService.java
+```
 
 ---
 
-## 🧩 Frontend Components
+# 🧩 Important Frontend Components
 
-| File | Responsibility |
-|---|---|
-| `home.page.ts` | Dashboard state, analytics, CRUD behavior, period selection |
-| `home.page.html` | Dashboard, chart, transactions, add/edit sheet |
-| `home.page.scss` | Mobile-first dashboard and sheet styling |
-| `expense.service.ts` | Expense API client |
-| `app.config.ts` | Ionic, router, and HttpClient providers |
-| `app.routes.ts` | Frontend routing |
+```text
+src/app/
+
+guards/
+    auth.guard.ts
+
+services/
+    auth.service.ts
+    expense.service.ts
+
+login/
+    login.page.ts
+    login.page.html
+    login.page.scss
+
+register/
+    register.page.ts
+    register.page.html
+    register.page.scss
+
+home/
+    config/
+        merchants.config.ts
+
+    models/
+        home.models.ts
+
+    home.page.ts
+    home.page.html
+    home.page.scss
+
+app.config.ts
+app.routes.ts
+```
 
 ---
 
-## 🗂 Implementation File Map
+# 🗂 Implementation File Map
 
 ```text
 spend-tracker/
 │
 ├── backend/
-│   ├── .mvn/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/spendtracker/
-│   │   │   │   ├── SpendTrackerApplication.java
-│   │   │   │   ├── config/
-│   │   │   │   │   └── CorsConfig.java
-│   │   │   │   ├── controller/
-│   │   │   │   │   ├── ExpenseController.java
-│   │   │   │   │   └── SpaController.java
-│   │   │   │   ├── model/
-│   │   │   │   │   ├── Expense.java
-│   │   │   │   │   └── ExpenseCategory.java
-│   │   │   │   └── repository/
-│   │   │   │       └── ExpenseRepository.java
-│   │   │   └── resources/
-│   │   │       └── application.properties
-│   │   └── test/
+│   ├── src/main/java/com/spendtracker/
+│   │
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── exception/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   └── service/
+│   │
+│   ├── src/main/resources/
+│   │   └── application.properties
+│   │
 │   ├── pom.xml
 │   ├── mvnw
 │   └── mvnw.cmd
 │
 ├── frontend/
 │   ├── src/
-│   │   └── app/
-│   │       ├── home/
-│   │       │   ├── home.page.ts
-│   │       │   ├── home.page.html
-│   │       │   └── home.page.scss
-│   │       ├── services/
-│   │       │   └── expense.service.ts
-│   │       ├── app.config.ts
-│   │       └── app.routes.ts
+│   │   ├── app/
+│   │   │   ├── guards/
+│   │   │   ├── services/
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   └── home/
+│   │   │       ├── config/
+│   │   │       ├── models/
+│   │   │       ├── home.page.ts
+│   │   │       ├── home.page.html
+│   │   │       └── home.page.scss
+│   │   │
+│   │   └── assets/
+│   │       └── icon/
+│   │           ├── food/
+│   │           └── fuel/
+│   │
 │   ├── angular.json
 │   ├── package.json
 │   └── capacitor.config.ts
@@ -657,49 +1214,38 @@ spend-tracker/
 
 ---
 
-## ⚙️ Configuration
+# ⚙️ Runtime Configuration
 
-### `application.properties`
-
-Production-safe configuration:
-
-```properties
-spring.application.name=spend-tracker-api
-
-server.port=${PORT:8080}
-
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.open-in-view=false
-
-spring.datasource.hikari.maximum-pool-size=5
-spring.datasource.hikari.minimum-idle=1
-```
-
-### Environment Variables
+Important environment variables:
 
 | Variable | Purpose |
 |---|---|
-| `DB_URL` | PostgreSQL JDBC connection URL |
+| `DB_URL` | PostgreSQL JDBC URL |
 | `DB_USERNAME` | PostgreSQL username |
 | `DB_PASSWORD` | PostgreSQL password |
-| `PORT` | Server port supplied by hosting environment |
+| `JWT_SECRET` | Base64 JWT signing key |
+| `APP_SECURITY_COOKIE_SECURE` | Enables Secure authentication cookies |
+| `PORT` | Runtime HTTP port |
 
-> Real database credentials must not appear in source control.
+Production Render configuration includes:
+
+```text
+DB_URL
+DB_USERNAME
+DB_PASSWORD
+JWT_SECRET
+APP_SECURITY_COOKIE_SECURE=true
+```
+
+Real credentials must never be committed to Git.
 
 ---
 
-## 🐘 Supabase Configuration
+# 🐘 Supabase
 
-Supabase provides the PostgreSQL database.
+Supabase is used as managed PostgreSQL hosting.
 
-Spring Boot connects using the PostgreSQL JDBC driver rather than accessing the database through the Supabase JavaScript client.
-
-Current architecture:
+Current database connection path:
 
 ```text
 Angular
@@ -713,428 +1259,477 @@ Spring Boot
 Supabase PostgreSQL
 ```
 
-The Supabase API keys are not required for the current backend database connection.
+The browser does not directly access PostgreSQL.
+
+Supabase Auth is not used.
+
+Authentication is implemented by Spring Boot.
 
 ---
 
-## 🔐 Security Requirements
+# 🐳 Docker Architecture
 
-### Current MVP
-
-The current application is intended for private personal use.
-
-Currently implemented:
-
-- Database credentials stored outside source code
-- Spring Boot database access
-- Backend validation
-- No credentials committed to Git
-- CORS restricted for local development origins
-
-### Not Yet Implemented
-
-- User authentication
-- Authorization
-- Per-user data ownership
-- JWT
-- Supabase Auth
-- Row Level Security
-- Multi-user isolation
-- Rate limiting
-- Public API protection
-
-> Do not treat the current MVP as a secure public multi-user finance application.
-
-Before public multi-user release, every expense must be associated with an authenticated user and queries must be restricted to that user.
+The application uses a multi-stage Docker build.
 
 ---
 
-## 🐳 Docker Architecture
-
-The root `Dockerfile` uses a multi-stage build.
-
-### Stage 1 — Frontend Build
+## Stage 1 — Angular
 
 ```text
-Node 22
-   │
+Node
+  │
 npm ci
-   │
+  │
 npm run build
-   │
+  │
 frontend/www
 ```
 
-### Stage 2 — Backend Build
+---
+
+## Stage 2 — Spring Boot Build
 
 ```text
 Java 21 JDK
-   │
+     │
 Maven Wrapper
-   │
+     │
 Copy frontend/www
-   │
+     │
 src/main/resources/static
-   │
+     │
 Spring Boot package
 ```
 
-### Stage 3 — Runtime
+---
+
+## Stage 3 — Runtime
 
 ```text
-Java 21 JRE
-   │
+Java 21 runtime
+       │
+       ▼
 app.jar
-   │
+       │
+       ▼
 Render
 ```
 
-This allows a single Render Web Service to host:
+The result is:
 
 ```text
 /
-→ Ionic application
+→ Angular
 
 /api/*
-→ Spring Boot REST API
+→ Spring Boot
 ```
 
 ---
 
-## 🚀 Render Deployment
+# 🌐 SPA Routing
 
-Target deployment:
-
-```text
-GitHub
-   │
-   ▼
-Render
-   │
-   ├── Docker build
-   ├── DB_URL
-   ├── DB_USERNAME
-   └── DB_PASSWORD
-   │
-   ▼
-Spend Tracker
-```
-
-### Required Render Environment Variables
+Spring Boot forwards frontend routes such as:
 
 ```text
-DB_URL
-DB_USERNAME
-DB_PASSWORD
+/
+/login
+/register
+/home
 ```
 
-`PORT` is supplied by Render and Spring Boot reads it using:
+to:
 
-```properties
-server.port=${PORT:8080}
+```text
+/index.html
+```
+
+Angular Router then handles navigation.
+
+---
+
+# ✅ Security Status
+
+Currently implemented:
+
+```text
+✅ User registration
+✅ User login
+✅ BCrypt password hashing
+✅ JWT authentication
+✅ HttpOnly access-token cookie
+✅ HttpOnly refresh-token cookie
+✅ Refresh-token hashing
+✅ Refresh-token rotation
+✅ Refresh-token replay detection
+✅ CSRF protection
+✅ Account lockout
+✅ Logout
+✅ Protected Angular routes
+✅ Per-user expense ownership
+✅ Per-user expense filtering
+✅ Cross-user edit protection
+✅ Cross-user delete protection
+✅ Unknown request-field rejection
+✅ Secure production cookies
+```
+
+Potential future security improvements:
+
+```text
+Rate limiting
+Email verification workflow
+Password reset
+Access-token revocation / blacklist
+Advanced device/session management
+Concurrent refresh-token locking
+Security event auditing
 ```
 
 ---
 
-## 🧪 Validation Checklist
+# 🧪 Validation Checklist
 
-### Backend
+## Authentication
 
-- [ ] Spring Boot starts successfully with Java 21
-- [ ] PostgreSQL connection succeeds
-- [ ] `POST /api/expenses` creates an expense
-- [ ] `GET /api/expenses` returns transactions
-- [ ] Monthly filter returns only selected-month data
-- [ ] Year filter returns only selected-year data
-- [ ] `PUT /api/expenses/{id}` updates an expense
-- [ ] `DELETE /api/expenses/{id}` removes an expense
-- [ ] Invalid month/year returns a client error
-
-### Frontend
-
-- [ ] Dashboard loads expenses
-- [ ] Month filter changes the visible transaction set
-- [ ] Year filter changes the visible transaction set
-- [ ] Total spending recalculates correctly
-- [ ] Category totals recalculate correctly
-- [ ] Donut chart matches category percentages
-- [ ] Add Expense saves successfully
-- [ ] Edit Expense saves successfully
-- [ ] Delete Expense works successfully
-- [ ] Empty periods display an empty state
-- [ ] Mobile layout works at iPhone-sized widths
-
-### Deployment
-
-- [ ] `npm run build` succeeds
-- [ ] Frontend output is generated under `frontend/www`
-- [ ] Docker image builds
-- [ ] Spring Boot serves `index.html`
-- [ ] Production frontend calls relative `/api/expenses`
-- [ ] Render environment variables are configured
-- [ ] Render service can reach Supabase
-- [ ] Direct `/home` navigation loads the SPA
-- [ ] Database credentials are absent from Git history
+```text
+[x] Register user
+[x] Login user
+[x] JWT access token generated
+[x] Refresh token generated
+[x] /api/auth/me returns current user
+[x] Logout works
+[x] CSRF-protected logout works
+[x] Refresh-token rotation works
+[x] Replay detection works
+[x] Account lockout works
+```
 
 ---
 
-## ✅ Architecture Decisions
-
-### 1. Standalone Product
-
-Spend Tracker is an independent application rather than a module inside another finance system.
-
-### 2. Web-First Mobile Design
-
-The frontend uses Ionic Angular so the same UI can support:
+## User Isolation
 
 ```text
-Web
-PWA
-iOS through Capacitor
-Android through Capacitor
+[x] User sees only their expenses
+[x] User cannot update another user's expense
+[x] User cannot delete another user's expense
+[x] Expense ownership comes from authentication
 ```
 
-without creating separate application codebases.
+---
 
-### 3. Spring Boot Owns Database Access
-
-The browser does not connect directly to the database.
+## Expenses
 
 ```text
-Frontend
-   ↓
-Spring Boot
-   ↓
-PostgreSQL
+[x] Create expense
+[x] Read expenses
+[x] Update expense
+[x] Delete expense
+[x] Month filtering
+[x] Year filtering
+[x] Expense DTO validation
+[x] Unknown field rejection
 ```
 
-This leaves room for authentication, validation, business rules, and API security later.
+---
 
-### 4. One Production Service
+## Frontend
 
-Frontend and backend are packaged together into one Render service.
+```text
+[x] Login page
+[x] Registration page
+[x] Protected Home route
+[x] Logout
+[x] Dashboard
+[x] Monthly filter
+[x] Yearly filter
+[x] Category analytics
+[x] Donut visualization
+[x] Add Expense
+[x] Edit Expense
+[x] Delete Expense
+[x] Quick Merchant selection
+[x] Food merchant assets
+[x] Fuel merchant assets
+[x] Manual merchant fallback
+[x] Responsive layout
+```
+
+---
+
+## Deployment
+
+```text
+[x] Angular production build
+[x] Docker multi-stage build
+[x] Spring Boot serves Angular
+[x] Same-origin production API
+[x] Render environment configuration
+[x] Supabase connectivity
+[x] Public /api/health endpoint
+[x] Direct /login route
+[x] Direct /register route
+[x] Direct /home route
+[x] Production authentication
+```
+
+---
+
+# ✅ Architecture Decisions
+
+## 1. Spring Boot Owns Authentication
+
+Authentication is implemented inside Spring Boot instead of using Supabase Auth.
+
+This keeps:
+
+```text
+authentication
+authorization
+expense ownership
+business rules
+```
+
+inside the backend.
+
+---
+
+## 2. Tokens Are Not Stored in Browser Storage
+
+JWT and refresh tokens use HttpOnly cookies.
+
+This reduces exposure to JavaScript-based token theft.
+
+---
+
+## 3. Expense Ownership Is Backend Controlled
+
+The authenticated principal determines expense ownership.
+
+The frontend cannot assign an expense to another user.
+
+---
+
+## 4. Frontend and Backend Share One Production Origin
 
 Benefits:
 
-- One deployment
-- One public domain
-- Relative `/api` URLs
-- Simpler CORS
-- Simpler personal hosting
-- Lower infrastructure complexity
-
-### 5. Supabase as PostgreSQL Hosting
-
-Supabase is currently used primarily as managed PostgreSQL storage.
-
-### 6. Categories as Enum
-
-Fixed categories remain in code for the MVP.
-
-### 7. Analytics Calculated in Frontend
-
-Filtered expense records are returned by the backend, while the visible category totals and donut percentages are calculated in Angular.
-
-This is appropriate for the current personal-data volume.
-
-For a larger multi-user product, summary endpoints may be moved to SQL/backend aggregation.
-
-### 8. Budget Is Currently Static
-
-The monthly budget is currently configured in the frontend.
-
-A future version should persist budget settings.
+```text
+simpler cookies
+simpler CSRF
+simpler CORS
+one deployment
+one URL
+```
 
 ---
 
-## 🔮 Future Improvements
+## 5. Quick Merchants Are Configuration
 
-### Receipt Scanning
+Merchant definitions are kept outside `home.page.ts`.
 
-Planned flow:
-
-```text
-Take receipt photo
-        │
-        ▼
-Receipt processing
-        │
-        ├── Merchant
-        ├── Date
-        ├── Total
-        └── Category suggestion
-        │
-        ▼
-User review
-        │
-        ▼
-Save Expense
-```
-
-The first receipt-scanning version should focus on:
+Adding new merchants should normally require updating:
 
 ```text
-merchant
-date
-total
-category
+merchants.config.ts
 ```
 
-rather than attempting full line-item extraction.
+plus adding the corresponding image assets.
 
-### Merchant Category Memory
+---
+
+## 6. Unknown Merchants Use Category-Specific Other Assets
 
 Example:
 
 ```text
-Kroger     → Groceries
-Shell      → Transportation / Car
-Netflix    → Subscriptions
-Starbucks  → Food & Dining
+Food
+Namaste India
+→ Food Other image
 ```
 
-User corrections can later be persisted and reused.
-
-### Configurable Budget
-
-Future data model may include:
-
-```text
-budgets
--------
-id
-user_id
-year
-month
-amount
-```
-
-### Yearly Trend Chart
-
-Year view can be enhanced with:
-
-```text
-Jan
-Feb
-Mar
-...
-Dec
-```
-
-monthly totals so the user can see spending trends across the selected year.
-
-### Recurring Expenses
-
-Potential detection:
-
-```text
-Netflix
-Rent
-Insurance
-Phone
-Internet
-Subscriptions
-```
-
-### Authentication
-
-Before public release:
-
-```text
-users
-expenses.user_id
-authentication
-authorization
-per-user filtering
-```
-
-must be added.
-
-### PWA
-
-Planned:
-
-- Web app manifest
-- Application icons
-- Service worker
-- Add to Home Screen
-- Standalone display mode
-
-### Native Mobile
-
-Capacitor can later package the frontend for:
-
-```text
-iOS
-Android
-```
-
-without replacing the current Ionic Angular UI.
+instead of requiring an image for every restaurant.
 
 ---
 
-## 📌 Current MVP Scope
+## 7. Categories Remain an Enum
+
+The category list remains fixed for the current application.
+
+User-created categories can be introduced later if needed.
+
+---
+
+## 8. Dashboard Analytics Stay in Angular
+
+The backend returns filtered expenses.
+
+Angular currently calculates:
+
+```text
+total
+category totals
+percentages
+donut slices
+budget progress
+```
+
+This is appropriate for the current scale.
+
+---
+
+# 🔮 Future Improvements
+
+Potential future work:
+
+```text
+Configurable monthly budgets
+Recurring-expense detection
+Receipt scanning
+Merchant/category memory
+Additional Quick Merchant categories
+Yearly trend charts
+Password reset
+Email verification
+Session/device management
+Rate limiting
+PWA improvements
+Native iOS packaging
+Native Android packaging
+```
+
+---
+
+# 📌 Current Scope
 
 Implemented:
 
 ```text
 ✅ Supabase PostgreSQL
-✅ Spring Boot REST backend
+✅ Spring Boot backend
 ✅ Ionic Angular frontend
+✅ Secure authentication
+✅ User registration
+✅ Login / logout
+✅ JWT
+✅ Refresh tokens
+✅ CSRF
+✅ User-scoped expenses
 ✅ Add expense
 ✅ Edit expense
 ✅ Delete expense
 ✅ Month filtering
 ✅ Year filtering
-✅ Category totals
-✅ Category percentage breakdown
-✅ Donut visualization
+✅ Category analytics
+✅ Donut chart
 ✅ Budget progress
+✅ Food Quick Merchants
+✅ Fuel Quick Merchants
+✅ Merchant image assets
+✅ Merchant fallback handling
 ✅ Responsive mobile UI
-✅ Docker deployment structure
+✅ Docker deployment
+✅ Render production deployment
+✅ Production health endpoint
 ```
 
 Not yet implemented:
 
 ```text
-❌ Authentication
-❌ Multiple users
+❌ Password reset
+❌ Email verification workflow
+❌ Rate limiting
 ❌ Receipt scanning
-❌ PWA installation configuration
-❌ Native iOS build
-❌ Native Android build
 ❌ Persisted budget settings
-❌ Recurring expense detection
+❌ Recurring-expense detection
 ❌ Notifications
+❌ Full PWA offline support
+❌ Native production iOS build
+❌ Native production Android build
 ```
 
 ---
 
-## 📚 Maintenance Notes
+# 📚 Maintenance Notes
 
-When adding a new expense field:
+## Adding a New Expense Field
 
-1. Update `Expense.java`.
-2. Confirm PostgreSQL schema behavior.
-3. Update create/edit request payloads.
-4. Update `expense.service.ts`.
-5. Update the Add/Edit Expense form.
+1. Update backend entity/request/response models.
+2. Update database behavior.
+3. Update `expense.service.ts`.
+4. Update Add/Edit form.
+5. Test create/update.
 6. Update documentation.
-7. Test create and update flows.
 
-When adding a new category:
+---
+
+## Adding a New Category
 
 1. Update `ExpenseCategory.java`.
-2. Update frontend `categories`.
-3. Assign a label/icon/color.
-4. Test donut/category calculations.
-5. Update this document.
+2. Add frontend category configuration.
+3. Assign label/icon/color.
+4. Test API validation.
+5. Test analytics.
+6. Update documentation.
 
-When adding a new protected feature:
+---
 
-1. Add authentication first.
-2. Associate expenses with the authenticated user.
-3. Never accept a frontend-provided user ID as authorization proof.
-4. Restrict backend queries to the authenticated principal.
-5. Add security tests.
+## Adding Quick Merchants
+
+1. Add merchant image assets.
+2. Add merchant entries to:
+
+```text
+home/config/merchants.config.ts
+```
+
+3. Confirm merchant selection auto-fills the Merchant field.
+4. Confirm transaction image resolution.
+5. Confirm unknown merchant falls back to `Other`.
+6. Test mobile layout.
+7. Update documentation if the merchant/category set materially changes.
+
+---
+
+## Security Rule
+
+Never trust a user ID supplied by the browser.
+
+Authorization must always use:
+
+```text
+authenticated principal
+        │
+        ▼
+backend user lookup
+        │
+        ▼
+user-scoped repository query
+```
+
+---
+
+# 🏁 Current Architecture
+
+```text
+Browser / Mobile
+      │
+      ▼
+Ionic Angular
+      │
+      │ HttpOnly cookies + CSRF
+      ▼
+Spring Security
+      │
+      ▼
+Spring Boot REST API
+      │
+      │ authenticated user ID
+      ▼
+Spring Data JPA
+      │
+      ▼
+Supabase PostgreSQL
+```
+
+Spend Tracker is now a secure authenticated multi-user expense-tracking application rather than the original unauthenticated personal MVP.

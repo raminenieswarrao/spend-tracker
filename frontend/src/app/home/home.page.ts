@@ -1,21 +1,29 @@
 import { CommonModule } from '@angular/common';
-
 import {
 ChangeDetectorRef,
 Component,
 OnInit
 } from '@angular/core';
-
 import { FormsModule } from '@angular/forms';
-
-import {
-Router
-} from '@angular/router';
-
+import { Router } from '@angular/router';
 import {
 IonContent,
 IonSpinner
 } from '@ionic/angular';
+
+import {
+getMerchantImage,
+getOtherMerchant,
+getQuickMerchantByName,
+getQuickMerchants
+} from './config/merchants.config';
+
+import {
+CategoryOption,
+CategorySummary,
+PeriodMode,
+QuickMerchantOption
+} from './models/home.models';
 
 import {
 AuthService
@@ -26,23 +34,6 @@ CreateExpenseRequest,
 Expense,
 ExpenseService
 } from '../services/expense.service';
-
-type PeriodMode =
-'MONTH' | 'YEAR';
-
-interface CategoryOption {
-value: string;
-label: string;
-icon: string;
-color: string;
-}
-
-interface CategorySummary
-extends CategoryOption {
-
-amount: number;
-percentage: number;
-}
 
 @Component({
 selector: 'app-home',
@@ -60,18 +51,15 @@ export class HomePage implements OnInit {
 
 expenses: Expense[] = [];
 
-categorySummaries:
-CategorySummary[] = [];
+categorySummaries: CategorySummary[] = [];
 
 totalSpent = 0;
 
 loading = true;
 
-readonly monthlyBudget: number =
-2500;
+readonly monthlyBudget = 2500;
 
-periodMode:
-PeriodMode = 'MONTH';
+periodMode: PeriodMode = 'MONTH';
 
 selectedYear =
 new Date().getFullYear();
@@ -89,6 +77,9 @@ new Date().getFullYear();
 
   editingExpenseId:
     number | null = null;
+
+  selectedQuickMerchantKey:
+    string | null = null;
 
   newExpense:
     CreateExpenseRequest =
@@ -265,7 +256,6 @@ new Date().getFullYear();
   ) {}
 
   ngOnInit(): void {
-
     this.loadExpenses();
   }
 
@@ -299,7 +289,9 @@ new Date().getFullYear();
     mode: PeriodMode
   ): void {
 
-    if (this.periodMode === mode) {
+    if (
+      this.periodMode === mode
+    ) {
       return;
     }
 
@@ -309,7 +301,6 @@ new Date().getFullYear();
   }
 
   onPeriodChange(): void {
-
     this.loadExpenses();
   }
 
@@ -326,7 +317,7 @@ new Date().getFullYear();
       .getExpenses(
         this.selectedYear,
         month
-)
+      )
 .subscribe({
 
         next: expenses => {
@@ -358,6 +349,9 @@ new Date().getFullYear();
   openAddExpense(): void {
 
     this.editingExpenseId =
+      null;
+
+    this.selectedQuickMerchantKey =
       null;
 
     this.newExpense =
@@ -400,6 +394,12 @@ new Date().getFullYear();
         expense.notes ?? ''
     };
 
+    this.selectedQuickMerchantKey =
+      this.findQuickMerchantKey(
+        expense.category,
+        expense.merchant ?? ''
+      );
+
     this.saveError = '';
 
     this.addExpenseOpen = true;
@@ -420,6 +420,9 @@ new Date().getFullYear();
     this.editingExpenseId =
       null;
 
+    this.selectedQuickMerchantKey =
+      null;
+
     this.saveError = '';
   }
 
@@ -427,8 +430,51 @@ new Date().getFullYear();
     category: string
   ): void {
 
+    const categoryChanged =
+      this.newExpense.category !==
+      category;
+
     this.newExpense.category =
       category;
+
+    if (categoryChanged) {
+
+      this.newExpense.merchant =
+        '';
+
+      this.selectedQuickMerchantKey =
+        null;
+    }
+  }
+
+  selectQuickMerchant(
+    option: QuickMerchantOption
+  ): void {
+
+    this.selectedQuickMerchantKey =
+      option.key;
+
+    this.newExpense.merchant =
+      option.merchant;
+  }
+
+  onMerchantInput(): void {
+
+    this.selectedQuickMerchantKey =
+      this.findQuickMerchantKey(
+        this.newExpense.category,
+        this.newExpense.merchant ?? ''
+      );
+  }
+
+  isQuickMerchantSelected(
+    option: QuickMerchantOption
+  ): boolean {
+
+    return (
+      this.selectedQuickMerchantKey ===
+      option.key
+    );
   }
 
   saveExpense(): void {
@@ -490,6 +536,9 @@ new Date().getFullYear();
         this.editingExpenseId =
           null;
 
+        this.selectedQuickMerchantKey =
+          null;
+
         this.loadExpenses();
       },
 
@@ -545,6 +594,9 @@ new Date().getFullYear();
           this.editingExpenseId =
             null;
 
+          this.selectedQuickMerchantKey =
+            null;
+
           this.loadExpenses();
         },
 
@@ -563,6 +615,65 @@ new Date().getFullYear();
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private findQuickMerchantKey(
+    category: string,
+    merchant: string
+  ): string | null {
+
+    const normalizedMerchant =
+      merchant.trim();
+
+    if (!normalizedMerchant) {
+      return null;
+    }
+
+    const matchedMerchant =
+      getQuickMerchantByName(
+        category,
+        normalizedMerchant
+      );
+
+    if (matchedMerchant) {
+
+      return matchedMerchant.key;
+    }
+
+    const otherMerchant =
+      getOtherMerchant(
+        category
+      );
+
+    return (
+      otherMerchant?.key ?? null
+    );
+  }
+
+  get quickMerchants():
+    QuickMerchantOption[] {
+
+    return getQuickMerchants(
+      this.newExpense.category
+    );
+  }
+
+  getTransactionMerchantImage(
+    expense: Expense
+  ): string | null {
+
+    const merchant =
+      expense.merchant?.trim()
+      ?? '';
+
+    if (!merchant) {
+      return null;
+    }
+
+    return getMerchantImage(
+      expense.category,
+      merchant
+    );
   }
 
   private calculateSummary(): void {
@@ -705,12 +816,11 @@ new Date().getFullYear();
 
   get periodBudget(): number {
 
-    return this.periodMode ===
-      'MONTH'
-
-      ? this.monthlyBudget
-
-      : this.monthlyBudget * 12;
+    return (
+      this.periodMode === 'MONTH'
+        ? this.monthlyBudget
+        : this.monthlyBudget * 12
+    );
   }
 
   get remainingBudget(): number {
@@ -724,7 +834,9 @@ new Date().getFullYear();
 
   get budgetPercentage(): number {
 
-    if (this.periodBudget <= 0) {
+    if (
+      this.periodBudget <= 0
+    ) {
       return 0;
     }
 
@@ -755,27 +867,27 @@ new Date().getFullYear();
           this.selectedMonth
       );
 
-    return `${month?.label ?? ''} ${this.selectedYear}`;
+    return `${
+      month?.label ?? ''
+    } ${this.selectedYear}`;
   }
 
   get periodDescription(): string {
 
-    return this.periodMode ===
-      'MONTH'
-
-      ? 'this month'
-
-      : 'this year';
+    return (
+      this.periodMode === 'MONTH'
+        ? 'this month'
+        : 'this year'
+    );
   }
 
   get budgetLabel(): string {
 
-    return this.periodMode ===
-      'MONTH'
-
-      ? 'Monthly budget'
-
-      : 'Year budget';
+    return (
+      this.periodMode === 'MONTH'
+        ? 'Monthly budget'
+        : 'Year budget'
+    );
   }
 
   get donutGradient(): string {
@@ -808,30 +920,37 @@ new Date().getFullYear();
         }
       );
 
-    return `conic-gradient(${slices.join(',')})`;
+    return (
+      `conic-gradient(` +
+      `${slices.join(',')})`
+    );
   }
 
   getCategoryLabel(
     category: string
   ): string {
 
-    return this.categories
-      .find(
-        item =>
-          item.value === category
+    return (
+      this.categories
+        .find(
+          item =>
+            item.value === category
 )
-?.label ?? category;
+?.label ?? category
+);
 }
 
 getCategoryIcon(
     category: string
   ): string {
 
-    return this.categories
-      .find(
-        item =>
-          item.value === category
+    return (
+      this.categories
+        .find(
+          item =>
+            item.value === category
 )
-?.icon ?? '💵';
+?.icon ?? '💵'
+);
 }
 }
