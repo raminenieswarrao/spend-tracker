@@ -163,22 +163,58 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        /*
+                         * CORS preflight.
+                         */
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         ).permitAll()
 
                         /*
-                         * Render health check.
+                         * Angular frontend entry points.
                          *
-                         * This endpoint requires no JWT,
-                         * refresh token or CSRF token.
+                         * These pages themselves are public.
+                         * The Angular auth guard protects /home
+                         * in the browser and the backend still
+                         * protects all expense APIs.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/",
+                                "/index.html",
+                                "/login",
+                                "/register",
+                                "/home"
+                        ).permitAll()
+
+                        /*
+                         * Angular static assets.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/assets/**",
+                                "/*.js",
+                                "/*.css",
+                                "/*.ico",
+                                "/*.png",
+                                "/*.svg",
+                                "/*.webp",
+                                "/*.json",
+                                "/*.webmanifest"
+                        ).permitAll()
+
+                        /*
+                         * Render health check.
                          */
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/health"
                         ).permitAll()
 
+                        /*
+                         * Authentication endpoints.
+                         */
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
@@ -200,10 +236,21 @@ public class SecurityConfig {
                                 "/api/auth/logout"
                         ).permitAll()
 
+                        /*
+                         * Spring error endpoint.
+                         */
                         .requestMatchers(
                                 "/error"
                         ).permitAll()
 
+                        /*
+                         * Everything else requires authentication.
+                         *
+                         * This includes:
+                         *
+                         * /api/expenses/**
+                         * future authenticated APIs
+                         */
                         .anyRequest()
                         .authenticated()
                 )

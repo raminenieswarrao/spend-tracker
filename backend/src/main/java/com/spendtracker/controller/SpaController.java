@@ -8,9 +8,12 @@ public class SpaController {
 
     @GetMapping({
             "/",
-            "/home"
+            "/home",
+            "/login",
+            "/register"
     })
     public String frontend() {
+
         return "forward:/index.html";
     }
 }
