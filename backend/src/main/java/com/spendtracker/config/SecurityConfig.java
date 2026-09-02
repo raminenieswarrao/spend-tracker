@@ -35,12 +35,6 @@ public class SecurityConfig {
             boolean secureCookie
     ) {
 
-        /*
-         * Angular needs to read the XSRF-TOKEN cookie
-         * and send it back using X-XSRF-TOKEN.
-         *
-         * The JWT cookies remain HttpOnly.
-         */
         CookieCsrfTokenRepository repository =
                 CookieCsrfTokenRepository.withHttpOnlyFalse();
 
@@ -61,19 +55,6 @@ public class SecurityConfig {
         return new CsrfTokenRequestAttributeHandler();
     }
 
-    /*
-     * Browser CORS configuration.
-     *
-     * Local Angular commonly runs on port 4200.
-     * Ionic commonly runs on port 8100.
-     *
-     * Production origins can later be supplied using:
-     *
-     * app.cors.allowed-origins
-     *
-     * We do NOT use "*" because authenticated
-     * requests use cookies.
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
             @Value(
@@ -117,18 +98,10 @@ public class SecurityConfig {
                 )
         );
 
-        /*
-         * Required because authentication uses
-         * browser cookies.
-         */
         configuration.setAllowCredentials(
                 true
         );
 
-        /*
-         * Cache successful preflight responses
-         * for one hour.
-         */
         configuration.setMaxAge(
                 3600L
         );
@@ -156,50 +129,24 @@ public class SecurityConfig {
 
         http
 
-                /*
-                 * Enable our CorsConfigurationSource.
-                 */
                 .cors(
                         Customizer.withDefaults()
                 )
 
-                /*
-                 * REST API only.
-                 */
                 .formLogin(
                         AbstractHttpConfigurer::disable
                 )
 
-                /*
-                 * No HTTP Basic authentication.
-                 */
                 .httpBasic(
                         AbstractHttpConfigurer::disable
                 )
 
-                /*
-                 * JWT authentication is completely stateless.
-                 */
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                /*
-                 * CSRF remains ENABLED.
-                 *
-                 * Registration and login are ignored because
-                 * they do not depend on an existing authenticated
-                 * browser session.
-                 *
-                 * IMPORTANT:
-                 *
-                 * /refresh and /logout are NOT ignored here.
-                 *
-                 * They both require a valid CSRF token because
-                 * they operate using HttpOnly cookies.
-                 */
                 .csrf(csrf ->
                         csrf
                                 .csrfTokenRepository(
@@ -216,72 +163,51 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        /*
-                         * Browser CORS preflight.
-                         */
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         ).permitAll()
 
                         /*
-                         * Public registration and login.
+                         * Render health check.
+                         *
+                         * This endpoint requires no JWT,
+                         * refresh token or CSRF token.
                          */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/health"
+                        ).permitAll()
+
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
                                 "/api/auth/login"
                         ).permitAll()
 
-                        /*
-                         * Public CSRF-token endpoint.
-                         */
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/auth/csrf"
                         ).permitAll()
 
-                        /*
-                         * Refresh must work even when the
-                         * 15-minute access JWT has expired.
-                         *
-                         * It is still protected by CSRF and
-                         * requires a valid refresh-token cookie.
-                         */
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/refresh"
                         ).permitAll()
 
-                        /*
-                         * Logout must also be possible if the
-                         * access JWT has expired.
-                         *
-                         * It remains protected by CSRF.
-                         */
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/logout"
                         ).permitAll()
 
-                        /*
-                         * Spring Boot internal error endpoint.
-                         */
                         .requestMatchers(
                                 "/error"
                         ).permitAll()
 
-                        /*
-                         * All normal application APIs require
-                         * a valid access JWT.
-                         */
                         .anyRequest()
                         .authenticated()
                 )
 
-                /*
-                 * Read access JWT from our HttpOnly cookie.
-                 */
                 .oauth2ResourceServer(oauth2 ->
                         oauth2
                                 .bearerTokenResolver(
@@ -294,10 +220,6 @@ public class SecurityConfig {
                                 )
                 )
 
-                /*
-                 * Return 401 instead of redirecting users
-                 * to a Spring login page.
-                 */
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(
                                 (request, response, exception) ->
@@ -318,15 +240,6 @@ public class SecurityConfig {
         JwtGrantedAuthoritiesConverter authoritiesConverter =
                 new JwtGrantedAuthoritiesConverter();
 
-        /*
-         * JWT:
-         *
-         * "role": "USER"
-         *
-         * becomes:
-         *
-         * ROLE_USER
-         */
         authoritiesConverter.setAuthoritiesClaimName(
                 "role"
         );
