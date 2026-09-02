@@ -64,6 +64,73 @@ image:
 }
 ],
 
+GROCERIES: [
+
+{
+key: 'ALDI',
+label: 'Aldi',
+merchant: 'Aldi',
+image:
+'assets/icon/grocery/aldi.png'
+},
+
+{
+key: 'COSTCO',
+label: 'Costco',
+merchant: 'Costco',
+image:
+'assets/icon/grocery/costco.png'
+},
+
+{
+key: 'KROGER',
+label: 'Kroger',
+merchant: 'Kroger',
+image:
+'assets/icon/grocery/kroger.png'
+},
+
+{
+key: 'SAMS_CLUB',
+label: 'Sam\'s Club',
+merchant: 'Sam\'s Club',
+image:
+'assets/icon/grocery/sams_club.png'
+},
+
+{
+key: 'TARGET',
+label: 'Target',
+merchant: 'Target',
+image:
+'assets/icon/grocery/target.jpg'
+},
+
+{
+key: 'WALMART',
+label: 'Walmart',
+merchant: 'Walmart',
+image:
+'assets/icon/grocery/walmart.svg'
+},
+
+{
+key: 'WHOLE_FOODS',
+label: 'Whole Foods',
+merchant: 'Whole Foods',
+image:
+'assets/icon/grocery/wholefoods.png'
+},
+
+{
+key: 'OTHER',
+label: 'Other',
+merchant: '',
+image:
+'assets/icon/grocery/other.webp'
+}
+],
+
 CAR: [
 
 {
@@ -222,7 +289,6 @@ export function getMerchantImage(
     );
 
   if (matchedMerchant) {
-
     return matchedMerchant.image;
   }
 
