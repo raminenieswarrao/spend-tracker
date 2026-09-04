@@ -2,6 +2,7 @@ import {
   QuickMerchantOption
 } from '../models/home.models';
 
+
 export const QUICK_MERCHANTS:
 Record<string, QuickMerchantOption[]> = {
 
@@ -50,6 +51,11 @@ image: 'assets/icon/housing/other.jpg'
 }
 ],
 
+
+/* =========================
+GROCERIES
+========================= */
+
 GROCERIES: [
 {
 key: 'ALDI',
@@ -70,10 +76,10 @@ merchant: 'Kroger',
 image: 'assets/icon/grocery/kroger.png'
 },
 {
-key: 'SAMS_CLUB',
-label: 'Sam\'s Club',
-merchant: 'Sam\'s Club',
-image: 'assets/icon/grocery/sams_club.png'
+key: 'WALMART',
+label: 'Walmart',
+merchant: 'Walmart',
+image: 'assets/icon/grocery/walmart.svg'
 },
 {
 key: 'TARGET',
@@ -82,16 +88,34 @@ merchant: 'Target',
 image: 'assets/icon/grocery/target.jpg'
 },
 {
-key: 'WALMART',
-label: 'Walmart',
-merchant: 'Walmart',
-image: 'assets/icon/grocery/walmart.svg'
-},
-{
 key: 'WHOLE_FOODS',
 label: 'Whole Foods',
 merchant: 'Whole Foods',
 image: 'assets/icon/grocery/wholefoods.png'
+},
+{
+key: 'SAMS_CLUB',
+label: 'Sam\'s Club',
+merchant: 'Sam\'s Club',
+image: 'assets/icon/grocery/sams_club.png'
+},
+{
+key: 'PATEL_BROTHERS',
+label: 'Patel Brothers',
+merchant: 'Patel Brothers',
+image: 'assets/icon/grocery/patel-brothers.png'
+},
+{
+key: 'JAGADEEP',
+label: 'Jagadeep Indian Grocery',
+merchant: 'Jagadeep',
+image: 'assets/icon/grocery/Jagadeep-indian-grocery.jpeg'
+},
+{
+key: 'DESI_BITES_GROCERY',
+label: 'Desi Bites Grocery',
+merchant: 'Desi Bites Grocery',
+image: 'assets/icon/grocery/desi-bites-grocery.webp'
 },
 {
 key: 'OTHER',
@@ -101,7 +125,54 @@ image: 'assets/icon/grocery/other.webp'
 }
 ],
 
+
+/* =========================
+FOOD & DINING
+========================= */
+
 FOOD_AND_DINING: [
+{
+key: 'NAMASTE_INDIA',
+label: 'Namaste India',
+merchant: 'Namaste India',
+image: 'assets/icon/food/namaste-india.jpeg'
+},
+{
+key: 'AMMA_KITCHEN',
+label: 'Amma Kitchen',
+merchant: 'Amma Kitchen',
+image: 'assets/icon/food/amma-kitchen.webp'
+},
+{
+key: 'BHEEMS',
+label: 'Bheems',
+merchant: 'Bheems',
+image: 'assets/icon/food/bheems.jpeg'
+},
+{
+key: 'BIRYANI_POT',
+label: 'Biryani Pot',
+merchant: 'Biryani Pot',
+image: 'assets/icon/food/biryani-pot.png'
+},
+{
+key: 'DESI_BITES',
+label: 'Desi Bites',
+merchant: 'Desi Bites',
+image: 'assets/icon/food/desi-bites.png'
+},
+{
+key: 'GODAVARI',
+label: 'Godavari',
+merchant: 'Godavari',
+image: 'assets/icon/food/godavari.png'
+},
+{
+key: 'HYDERABADI_NAWABS',
+label: 'Hyderabadi Nawabs',
+merchant: 'Hyderabadi Nawabs',
+image: 'assets/icon/food/hyderabadi-nawabs.webp'
+},
 {
 key: 'MCDONALDS',
 label: 'McDonald\'s',
@@ -145,6 +216,11 @@ merchant: '',
 image: 'assets/icon/food/bread.png'
 }
 ],
+
+
+/* =========================
+TRANSPORTATION
+========================= */
 
 TRANSPORTATION: [
 {
@@ -202,6 +278,11 @@ merchant: '',
 image: 'assets/icon/transportation/other.jpg'
 }
 ],
+
+
+/* =========================
+CAR
+========================= */
 
 CAR: [
 {
@@ -272,6 +353,11 @@ image: 'assets/icon/car/other.jpeg'
 }
 ],
 
+
+/* =========================
+UTILITIES
+========================= */
+
 UTILITIES: [
 {
 key: 'DUKE_ENERGY',
@@ -334,6 +420,11 @@ merchant: '',
 image: 'assets/icon/utilities/other.jpg'
 }
 ],
+
+
+/* =========================
+SHOPPING
+========================= */
 
 SHOPPING: [
 {
@@ -428,6 +519,11 @@ image: 'assets/icon/shopping/other.jpg'
 }
 ],
 
+
+/* =========================
+HEALTH
+========================= */
+
 HEALTH: [
 {
 key: 'CVS',
@@ -490,6 +586,11 @@ merchant: '',
 image: 'assets/icon/health/other.jpg'
 }
 ],
+
+
+/* =========================
+SUBSCRIPTIONS
+========================= */
 
 SUBSCRIPTIONS: [
 {
@@ -560,6 +661,11 @@ image: 'assets/icon/subscription/other.webp'
 }
 ],
 
+
+/* =========================
+ENTERTAINMENT
+========================= */
+
 ENTERTAINMENT: [
 {
 key: 'AMC',
@@ -616,6 +722,11 @@ merchant: '',
 image: 'assets/icon/entertainment/other.png'
 }
 ],
+
+
+/* =========================
+TRAVEL
+========================= */
 
 TRAVEL: [
 {
@@ -692,6 +803,11 @@ image: 'assets/icon/travel/other.avif'
 }
 ],
 
+
+/* =========================
+EDUCATION
+========================= */
+
 EDUCATION: [
 {
 key: 'TUITION',
@@ -743,6 +859,11 @@ image: 'assets/icon/education/other.avif'
 }
 ],
 
+
+/* =========================
+PERSONAL CARE
+========================= */
+
 PERSONAL_CARE: [
 {
 key: 'HAIRCUT',
@@ -775,6 +896,11 @@ merchant: '',
 image: 'assets/icon/personal-care/other.webp'
 }
 ],
+
+
+/* =========================
+INSURANCE
+========================= */
 
 INSURANCE: [
 {
@@ -902,6 +1028,7 @@ export function getMerchantImage(
     );
 
   if (matchedMerchant) {
+
     return matchedMerchant.image;
   }
 

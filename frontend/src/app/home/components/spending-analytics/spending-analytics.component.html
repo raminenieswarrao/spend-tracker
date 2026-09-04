@@ -1,0 +1,516 @@
+<section class="analytics-section">
+
+  <div class="section-header">
+
+    <div>
+
+      <h3>
+        Spending by Category
+      </h3>
+
+      <span>
+        {{ periodLabel }}
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <div class="analytics-card">
+
+    <div
+      class="analytics-overview"
+      [class.has-selection]="
+        selectedCategoryValue !== null
+      "
+      (pointerleave)="
+        onAnalyticsPointerLeave($event)
+      ">
+
+
+      <!-- =========================
+           DONUT AREA
+           ========================= -->
+
+      <div class="donut-area">
+
+        <div
+          class="donut-chart"
+          appInView
+          (inViewChange)="
+            onDonutVisibilityChange(
+              $event
+            )
+          ">
+
+          <svg
+            class="donut-svg"
+            [class.donut-visible]="
+              donutInView
+            "
+            viewBox="0 0 200 200"
+            aria-label="Spending by category"
+            (pointermove)="
+              onDonutPointerMove(
+                $event
+              )
+            "
+            (pointerdown)="
+              onDonutPointerDown(
+                $event
+              )
+            ">
+
+
+            <!-- =========================
+                 REVEAL MASK
+
+                 The white circle inside
+                 the mask grows around the
+                 donut.
+
+                 Only the portion covered
+                 by white becomes visible.
+                 ========================= -->
+
+            <defs>
+
+              <mask id="donutRevealMask">
+
+                <rect
+                  x="0"
+                  y="0"
+                  width="200"
+                  height="200"
+                  fill="black">
+                </rect>
+
+
+                <circle
+                  class="donut-reveal-path"
+                  cx="100"
+                  cy="100"
+                  r="76"
+                  pathLength="100"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="34"
+                  stroke-linecap="butt">
+                </circle>
+
+              </mask>
+
+            </defs>
+
+
+            <!-- =========================
+                 BACKGROUND TRACK
+                 ========================= -->
+
+            <circle
+              class="donut-track"
+              cx="100"
+              cy="100"
+              r="76">
+            </circle>
+
+
+            <!-- =========================
+                 COLORED DONUT
+
+                 The mask controls how
+                 much of these slices is
+                 currently visible.
+                 ========================= -->
+
+            <g
+              mask="url(#donutRevealMask)"
+              class="donut-slices">
+
+              @for (
+              slice of donutSlices;
+              track slice.value
+              ) {
+
+              <circle
+                class="donut-slice"
+                [class.active]="
+                  selectedCategoryValue ===
+                  slice.value
+                "
+                cx="100"
+                cy="100"
+                r="76"
+                [attr.stroke]="
+                  slice.color
+                "
+                [attr.stroke-dasharray]="
+                  slice.dashArray
+                "
+                [attr.stroke-dashoffset]="
+                  slice.dashOffset
+                ">
+              </circle>
+
+              }
+
+            </g>
+
+
+            <!-- =========================
+                 POINTER HIT RING
+                 ========================= -->
+
+            <circle
+              class="donut-hit-ring"
+              cx="100"
+              cy="100"
+              r="76">
+            </circle>
+
+          </svg>
+
+
+          <!-- =========================
+               CENTER VALUE
+               ========================= -->
+
+          <div
+            class="donut-center"
+            [class.donut-center-visible]="
+              donutInView
+            ">
+
+            <strong>
+
+              {{
+              totalSpent
+              | currency:'USD'
+              }}
+
+            </strong>
+
+            <span>
+              spent
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             HINT
+             ========================= -->
+
+        <p
+          class="donut-hint"
+          [class.donut-hint-visible]="
+            donutInView
+          ">
+
+          Hover or tap a color
+          to explore
+
+        </p>
+
+      </div>
+
+
+      <!-- =========================
+           MERCHANT BREAKDOWN
+           ========================= -->
+
+      @if (
+      selectedCategory;
+      as category
+      ) {
+
+      <aside class="merchant-panel">
+
+        <div class="merchant-panel-header">
+
+          <div class="selected-category">
+
+            <div
+              class="selected-category-icon">
+
+              {{ category.icon }}
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Category
+              </span>
+
+              <h4>
+                {{ category.label }}
+              </h4>
+
+            </div>
+
+          </div>
+
+
+          <div class="selected-category-total">
+
+            <strong>
+
+              {{
+              category.amount
+              | currency:'USD'
+              }}
+
+            </strong>
+
+            <span>
+
+              {{
+                category.percentage
+                  | number:'1.0-0'
+              }}%
+
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             MERCHANT LIST
+             ========================= -->
+
+        @if (
+        merchantSummaries.length > 0
+        ) {
+
+        <div class="merchant-list">
+
+          @for (
+          merchant of
+          visibleMerchantSummaries;
+          track merchant.key
+          ) {
+
+          <div class="merchant-row">
+
+            <div
+              class="merchant-image-wrapper">
+
+              @if (
+              merchant.image
+              ) {
+
+              <img
+                class="merchant-image"
+                [src]="merchant.image"
+                [alt]="merchant.name">
+
+              } @else {
+
+              <span>
+                {{ category.icon }}
+              </span>
+
+              }
+
+            </div>
+
+
+            <div class="merchant-details">
+
+              <strong>
+                {{ merchant.name }}
+              </strong>
+
+              <span>
+
+                {{
+                  merchant.transactionCount
+                }}
+
+                {{
+                  merchant.transactionCount === 1
+                    ? 'transaction'
+                    : 'transactions'
+                }}
+
+              </span>
+
+            </div>
+
+
+            <strong
+              class="merchant-amount">
+
+              {{
+              merchant.amount
+              | currency:'USD'
+              }}
+
+            </strong>
+
+          </div>
+
+          }
+
+        </div>
+
+
+        @if (
+        hiddenMerchantCount > 0 ||
+        showAllMerchants
+        ) {
+
+        <button
+          type="button"
+          class="view-all-button"
+          (click)="
+            toggleMerchantList()
+          ">
+
+          @if (
+          showAllMerchants
+          ) {
+
+          Show top 5
+
+          } @else {
+
+          View all
+          {{ merchantSummaries.length }}
+          merchants
+
+          }
+
+        </button>
+
+        }
+
+        } @else {
+
+        <div class="merchant-empty">
+
+          No merchant details
+          for this category.
+
+        </div>
+
+        }
+
+      </aside>
+
+      } @else {
+
+
+      <!-- =========================
+           INVISIBLE PLACEHOLDER
+
+           Keeps desktop layout stable
+           while donut is centered.
+           ========================= -->
+
+      <aside
+        class="
+          merchant-panel
+          merchant-panel-placeholder
+        "
+        aria-hidden="true">
+      </aside>
+
+      }
+
+    </div>
+
+
+    <!-- =========================
+         CATEGORY TOTALS
+         ========================= -->
+
+    <div class="category-list">
+
+      @for (
+      category of categorySummaries;
+      track category.value
+      ) {
+
+      <div class="category-row">
+
+        <div class="category-icon">
+
+          {{ category.icon }}
+
+        </div>
+
+
+        <div class="category-info">
+
+          <div class="category-title-row">
+
+            <span>
+              {{ category.label }}
+            </span>
+
+            <strong>
+
+              {{
+              category.amount
+              | currency:'USD'
+              }}
+
+            </strong>
+
+          </div>
+
+
+          <div class="category-meta">
+
+            <span
+              class="category-dot"
+              [style.background]="
+                category.color
+              ">
+            </span>
+
+            <span>
+
+              {{
+                category.percentage
+                  | number:'1.0-0'
+              }}%
+
+            </span>
+
+          </div>
+
+
+          <div class="category-bar">
+
+            <div
+              class="category-bar-value"
+              [style.background]="
+                category.color
+              "
+              [style.width.%]="
+                category.percentage
+              ">
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>

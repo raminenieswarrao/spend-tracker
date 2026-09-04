@@ -2,9 +2,9 @@
 
   <div class="page-shell">
 
-    <!-- =========================================
+    <!-- =========================
          HEADER
-         ========================================= -->
+         ========================= -->
 
     <header class="top-section">
 
@@ -69,9 +69,9 @@
     </header>
 
 
-    <!-- =========================================
+    <!-- =========================
          PERIOD FILTER
-         ========================================= -->
+         ========================= -->
 
     <section class="period-section">
 
@@ -111,8 +111,11 @@
           track month.value
           ) {
 
-          <option [ngValue]="month.value">
+          <option
+            [ngValue]="month.value">
+
             {{ month.label }}
+
           </option>
 
           }
@@ -131,8 +134,11 @@
           track year
           ) {
 
-          <option [ngValue]="year">
+          <option
+            [ngValue]="year">
+
             {{ year }}
+
           </option>
 
           }
@@ -144,43 +150,63 @@
     </section>
 
 
-    <!-- =========================================
-         LOADING
-         ========================================= -->
-
     @if (loading) {
 
     <div class="loading">
-      <ion-spinner></ion-spinner>
+
+      <ion-spinner>
+      </ion-spinner>
+
     </div>
 
     } @else {
 
 
-    <!-- =========================================
+    <!-- =========================
          SUMMARY
-         ========================================= -->
+         ========================= -->
 
     <section class="balance-card">
 
       <p class="card-label">
-        Total spent {{ periodDescription }}
+
+        Total spent
+        {{ periodDescription }}
+
       </p>
 
+
       <h2>
-        {{ totalSpent | currency:'USD' }}
+
+        {{
+        totalSpent
+        | currency:'USD'
+        }}
+
       </h2>
 
 
       <div class="budget-row">
 
         <span>
-          {{ remainingBudget | currency:'USD' }}
+
+          {{
+            remainingBudget
+              | currency:'USD'
+          }}
+
           remaining
+
         </span>
 
+
         <span>
-          {{ budgetPercentage | number:'1.0-0' }}%
+
+          {{
+            budgetPercentage
+              | number:'1.0-0'
+          }}%
+
         </span>
 
       </div>
@@ -190,7 +216,9 @@
 
         <div
           class="progress-value"
-          [style.width.%]="budgetPercentage">
+          [style.width.%]="
+            budgetPercentage
+          ">
         </div>
 
       </div>
@@ -199,16 +227,33 @@
       <p class="budget-caption">
 
         {{ budgetLabel }}:
-        {{ periodBudget | currency:'USD' }}
+
+        {{
+        periodBudget
+        | currency:'USD'
+        }}
 
       </p>
 
     </section>
 
 
-    <!-- =========================================
-         CATEGORY ANALYTICS
-         ========================================= -->
+    <!-- =========================
+         SPENDING ANALYTICS
+         ========================= -->
+
+    @if (
+    categorySummaries.length > 0
+    ) {
+
+    <app-spending-analytics
+      [expenses]="expenses"
+      [categorySummaries]="categorySummaries"
+      [totalSpent]="totalSpent"
+      [periodLabel]="periodLabel">
+    </app-spending-analytics>
+
+    } @else {
 
     <section class="section">
 
@@ -229,106 +274,6 @@
       </div>
 
 
-      @if (categorySummaries.length > 0) {
-
-      <div class="analytics-card">
-
-
-        <!-- DONUT -->
-
-        <div class="donut-wrapper">
-
-          <div
-            class="donut-chart"
-            [style.background]="donutGradient">
-
-            <div class="donut-center">
-
-              <strong>
-                {{ totalSpent | currency:'USD' }}
-              </strong>
-
-              <span>
-                spent
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <!-- CATEGORY LIST -->
-
-        <div class="category-list">
-
-          @for (
-          category of categorySummaries;
-          track category.value
-          ) {
-
-          <div class="category-row">
-
-            <div class="category-icon">
-              {{ category.icon }}
-            </div>
-
-
-            <div class="category-info">
-
-              <div class="category-title-row">
-
-                <span>
-                  {{ category.label }}
-                </span>
-
-                <strong>
-                  {{ category.amount | currency:'USD' }}
-                </strong>
-
-              </div>
-
-
-              <div class="category-meta">
-
-                <span
-                  class="category-dot"
-                  [style.background]="category.color">
-                </span>
-
-                <span>
-                  {{
-                    category.percentage
-                      | number:'1.0-0'
-                  }}%
-                </span>
-
-              </div>
-
-
-              <div class="category-bar">
-
-                <div
-                  class="category-bar-value"
-                  [style.background]="category.color"
-                  [style.width.%]="category.percentage">
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          }
-
-        </div>
-
-      </div>
-
-      } @else {
-
       <div class="empty-card">
 
         <div class="empty-icon">
@@ -340,19 +285,22 @@
         </strong>
 
         <span>
-          Add an expense for {{ periodLabel }}.
+
+          Add an expense for
+          {{ periodLabel }}.
+
         </span>
 
       </div>
 
-      }
-
     </section>
 
+    }
 
-    <!-- =========================================
+
+    <!-- =========================
          TRANSACTIONS
-         ========================================= -->
+         ========================= -->
 
     <section class="section">
 
@@ -365,8 +313,10 @@
           </h3>
 
           <span>
+
             {{ expenses.length }}
             transactions
+
           </span>
 
         </div>
@@ -374,7 +324,9 @@
       </div>
 
 
-      @if (expenses.length > 0) {
+      @if (
+      expenses.length > 0
+      ) {
 
       <div class="transaction-card">
 
@@ -386,12 +338,12 @@
         <div class="transaction">
 
 
-          <!-- MERCHANT LOGO / CATEGORY FALLBACK -->
-
           <div class="transaction-icon">
 
             @if (
-            getTransactionMerchantImage(expense);
+            getTransactionMerchantImage(
+            expense
+            );
             as merchantImage
             ) {
 
@@ -408,11 +360,13 @@
             } @else {
 
             <span>
+
               {{
                 getCategoryIcon(
                   expense.category
                 )
               }}
+
             </span>
 
             }
@@ -423,7 +377,11 @@
           <button
             type="button"
             class="transaction-main"
-            (click)="openEditExpense(expense)">
+            (click)="
+              openEditExpense(
+                expense
+              )
+            ">
 
             <div class="transaction-details">
 
@@ -437,6 +395,7 @@
                 }}
 
               </strong>
+
 
               <span>
 
@@ -474,7 +433,11 @@
             type="button"
             class="edit-transaction-button"
             aria-label="Edit expense"
-            (click)="openEditExpense(expense)">
+            (click)="
+              openEditExpense(
+                expense
+              )
+            ">
 
             ⋯
 
@@ -495,7 +458,10 @@
         </strong>
 
         <span>
-          Nothing recorded for {{ periodLabel }}.
+
+          Nothing recorded for
+          {{ periodLabel }}.
+
         </span>
 
       </div>
@@ -507,9 +473,9 @@
     }
 
 
-    <!-- =========================================
+    <!-- =========================
          FOOTER
-         ========================================= -->
+         ========================= -->
 
     <footer class="app-footer">
 
@@ -524,10 +490,6 @@
     </footer>
 
 
-    <!-- =========================================
-         ADD BUTTON
-         ========================================= -->
-
     <button
       class="add-button"
       type="button"
@@ -541,9 +503,9 @@
   </div>
 
 
-  <!-- =========================================
-       ADD / EDIT SHEET
-       ========================================= -->
+  <!-- =========================
+       ADD / EDIT EXPENSE
+       ========================= -->
 
   @if (addExpenseOpen) {
 
@@ -565,10 +527,16 @@
 
         <p class="sheet-eyebrow">
 
-          @if (editingExpenseId === null) {
+          @if (
+          editingExpenseId === null
+          ) {
+
           NEW TRANSACTION
+
           } @else {
+
           EDIT TRANSACTION
+
           }
 
         </p>
@@ -576,10 +544,16 @@
 
         <h2>
 
-          @if (editingExpenseId === null) {
+          @if (
+          editingExpenseId === null
+          ) {
+
           Add Expense
+
           } @else {
+
           Edit Expense
+
           }
 
         </h2>
@@ -600,15 +574,14 @@
     </div>
 
 
-    <!-- =========================================
-         AMOUNT
-         ========================================= -->
+    <!-- AMOUNT -->
 
     <div class="amount-section">
 
       <label>
         Amount
       </label>
+
 
       <div class="amount-input">
 
@@ -622,16 +595,16 @@
           step="0.01"
           min="0"
           placeholder="0.00"
-          [(ngModel)]="newExpense.amount">
+          [(ngModel)]="
+            newExpense.amount
+          ">
 
       </div>
 
     </div>
 
 
-    <!-- =========================================
-         CATEGORY
-         ========================================= -->
+    <!-- CATEGORY -->
 
     <div class="form-section">
 
@@ -677,11 +650,11 @@
     </div>
 
 
-    <!-- =========================================
-         QUICK MERCHANTS
-         ========================================= -->
+    <!-- QUICK MERCHANT -->
 
-    @if (quickMerchants.length > 0) {
+    @if (
+    quickMerchants.length > 0
+    ) {
 
     <div class="quick-merchant-section">
 
@@ -694,7 +667,10 @@
           </label>
 
           <p>
-            Tap a place to fill the merchant automatically.
+
+            Tap a place to fill
+            the merchant automatically.
+
           </p>
 
         </div>
@@ -723,7 +699,8 @@
             )
           ">
 
-          <span class="quick-merchant-image-wrapper">
+          <span
+            class="quick-merchant-image-wrapper">
 
             <img
               class="quick-merchant-image"
@@ -732,8 +709,12 @@
 
           </span>
 
-          <span class="quick-merchant-label">
+
+          <span
+            class="quick-merchant-label">
+
             {{ merchant.label }}
+
           </span>
 
         </button>
@@ -747,9 +728,7 @@
     }
 
 
-    <!-- =========================================
-         MERCHANT / DATE
-         ========================================= -->
+    <!-- MERCHANT / DATE -->
 
     <div class="form-grid">
 
@@ -762,7 +741,9 @@
         <input
           type="text"
           placeholder="Kroger, Shell..."
-          [(ngModel)]="newExpense.merchant"
+          [(ngModel)]="
+            newExpense.merchant
+          "
           (input)="onMerchantInput()">
 
       </div>
@@ -776,16 +757,16 @@
 
         <input
           type="date"
-          [(ngModel)]="newExpense.expenseDate">
+          [(ngModel)]="
+            newExpense.expenseDate
+          ">
 
       </div>
 
     </div>
 
 
-    <!-- =========================================
-         PAYMENT
-         ========================================= -->
+    <!-- PAYMENT -->
 
     <div class="form-field">
 
@@ -794,7 +775,9 @@
       </label>
 
       <select
-        [(ngModel)]="newExpense.paymentMethod">
+        [(ngModel)]="
+          newExpense.paymentMethod
+        ">
 
         @for (
         method of paymentMethods;
@@ -802,7 +785,9 @@
         ) {
 
         <option [value]="method">
+
           {{ method }}
+
         </option>
 
         }
@@ -812,9 +797,7 @@
     </div>
 
 
-    <!-- =========================================
-         DESCRIPTION
-         ========================================= -->
+    <!-- DESCRIPTION -->
 
     <div class="form-field">
 
@@ -825,14 +808,14 @@
       <input
         type="text"
         placeholder="Optional"
-        [(ngModel)]="newExpense.description">
+        [(ngModel)]="
+          newExpense.description
+        ">
 
     </div>
 
 
-    <!-- =========================================
-         NOTES
-         ========================================= -->
+    <!-- NOTES -->
 
     <div class="form-field">
 
@@ -843,7 +826,9 @@
       <textarea
         rows="3"
         placeholder="Anything you want to remember..."
-        [(ngModel)]="newExpense.notes">
+        [(ngModel)]="
+          newExpense.notes
+        ">
       </textarea>
 
     </div>
@@ -852,28 +837,35 @@
     @if (saveError) {
 
     <div class="save-error">
+
       {{ saveError }}
+
     </div>
 
     }
 
 
-    <!-- =========================================
-         DELETE
-         ========================================= -->
-
-    @if (editingExpenseId !== null) {
+    @if (
+    editingExpenseId !== null
+    ) {
 
     <button
       type="button"
       class="delete-button"
-      [disabled]="saving || deleting"
+      [disabled]="
+        saving ||
+        deleting
+      "
       (click)="deleteExpense()">
 
       @if (deleting) {
+
       Deleting...
+
       } @else {
+
       Delete Expense
+
       }
 
     </button>
@@ -881,21 +873,22 @@
     }
 
 
-    <!-- =========================================
-         SAVE
-         ========================================= -->
-
     <button
       type="button"
       class="save-button"
-      [disabled]="saving || deleting"
+      [disabled]="
+        saving ||
+        deleting
+      "
       (click)="saveExpense()">
 
       @if (saving) {
 
       Saving...
 
-      } @else if (editingExpenseId !== null) {
+      } @else if (
+      editingExpenseId !== null
+      ) {
 
       Save Changes
 

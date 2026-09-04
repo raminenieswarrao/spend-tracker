@@ -6,10 +6,26 @@ OnInit
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import {
 IonContent,
 IonSpinner
 } from '@ionic/angular';
+
+import {
+SpendingAnalyticsComponent
+} from './components/spending-analytics/spending-analytics.component';
+
+import {
+CATEGORIES
+} from './config/categories.config';
+
+import {
+buildYearOptions,
+MONTHLY_BUDGET,
+MONTHS,
+PAYMENT_METHODS
+} from './config/home-options.config';
 
 import {
 getMerchantImage,
@@ -19,11 +35,15 @@ getQuickMerchants
 } from './config/merchants.config';
 
 import {
-CategoryOption,
 CategorySummary,
 PeriodMode,
 QuickMerchantOption
 } from './models/home.models';
+
+import {
+calculateCategorySummaries,
+calculateTotalSpent
+} from './utils/expense-analytics.util';
 
 import {
 AuthService
@@ -44,20 +64,23 @@ imports: [
 CommonModule,
 FormsModule,
 IonContent,
-IonSpinner
+IonSpinner,
+SpendingAnalyticsComponent
 ]
 })
 export class HomePage implements OnInit {
 
 expenses: Expense[] = [];
-
 categorySummaries: CategorySummary[] = [];
 
 totalSpent = 0;
-
 loading = true;
 
-readonly monthlyBudget = 2500;
+readonly monthlyBudget = MONTHLY_BUDGET;
+readonly months = MONTHS;
+readonly years = buildYearOptions();
+readonly paymentMethods = PAYMENT_METHODS;
+readonly categories = CATEGORIES;
 
 periodMode: PeriodMode = 'MONTH';
 
@@ -68,9 +91,7 @@ new Date().getFullYear();
     new Date().getMonth() + 1;
 
   addExpenseOpen = false;
-
   saving = false;
-
   deleting = false;
 
   saveError = '';
@@ -84,162 +105,6 @@ new Date().getFullYear();
   newExpense:
     CreateExpenseRequest =
       this.createEmptyExpense();
-
-  readonly months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' }
-  ];
-
-  readonly years =
-    Array.from(
-      { length: 7 },
-      (_, index) =>
-        new Date().getFullYear()
-        - 5
-        + index
-    );
-
-  readonly paymentMethods = [
-    'Credit Card',
-    'Debit Card',
-    'Cash',
-    'Apple Pay',
-    'Bank Transfer',
-    'Other'
-  ];
-
-  readonly categories:
-    CategoryOption[] = [
-
-      {
-        value: 'HOUSING',
-        label: 'Housing',
-        icon: '🏠',
-        color: '#6366f1'
-      },
-
-      {
-        value: 'GROCERIES',
-        label: 'Groceries',
-        icon: '🛒',
-        color: '#22c55e'
-      },
-
-      {
-        value: 'FOOD_AND_DINING',
-        label: 'Food & Dining',
-        icon: '🍽️',
-        color: '#f97316'
-      },
-
-      {
-        value: 'TRANSPORTATION',
-        label: 'Transportation',
-        icon: '🚘',
-        color: '#0ea5e9'
-      },
-
-      {
-        value: 'CAR',
-        label: 'Car',
-        icon: '🚗',
-        color: '#64748b'
-      },
-
-      {
-        value: 'UTILITIES',
-        label: 'Utilities',
-        icon: '💡',
-        color: '#eab308'
-      },
-
-      {
-        value: 'SHOPPING',
-        label: 'Shopping',
-        icon: '🛍️',
-        color: '#ec4899'
-      },
-
-      {
-        value: 'HEALTH',
-        label: 'Health',
-        icon: '❤️',
-        color: '#ef4444'
-      },
-
-      {
-        value: 'SUBSCRIPTIONS',
-        label: 'Subscriptions',
-        icon: '📱',
-        color: '#8b5cf6'
-      },
-
-      {
-        value: 'ENTERTAINMENT',
-        label: 'Entertainment',
-        icon: '🎬',
-        color: '#14b8a6'
-      },
-
-      {
-        value: 'TRAVEL',
-        label: 'Travel',
-        icon: '✈️',
-        color: '#3b82f6'
-      },
-
-      {
-        value: 'EDUCATION',
-        label: 'Education',
-        icon: '🎓',
-        color: '#a855f7'
-      },
-
-      {
-        value: 'PERSONAL_CARE',
-        label: 'Personal Care',
-        icon: '💇',
-        color: '#f43f5e'
-      },
-
-      {
-        value: 'INSURANCE',
-        label: 'Insurance',
-        icon: '🛡️',
-        color: '#475569'
-      },
-
-      {
-        value: 'FAMILY_AND_GIFTS',
-        label: 'Family & Gifts',
-        icon: '🎁',
-        color: '#d946ef'
-      },
-
-      {
-        value: 'FEES_AND_TAXES',
-        label: 'Fees & Taxes',
-        icon: '🧾',
-        color: '#78716c'
-      },
-
-      {
-        value: 'OTHER',
-        label: 'Other',
-        icon: '💵',
-        color: '#94a3b8'
-      }
-    ];
 
   constructor(
     private readonly expenseService:
@@ -264,7 +129,6 @@ new Date().getFullYear();
     this.authService
       .logout()
       .subscribe({
-
         next: () => {
 
           this.router.navigateByUrl(
@@ -317,9 +181,8 @@ new Date().getFullYear();
       .getExpenses(
         this.selectedYear,
         month
-      )
+)
 .subscribe({
-
         next: expenses => {
 
           this.expenses =
@@ -370,7 +233,6 @@ new Date().getFullYear();
       expense.id;
 
     this.newExpense = {
-
       amount:
         Number(expense.amount),
 
@@ -387,8 +249,8 @@ new Date().getFullYear();
         expense.expenseDate,
 
       paymentMethod:
-        expense.paymentMethod
-        ?? 'Credit Card',
+        expense.paymentMethod ??
+        'Credit Card',
 
       notes:
         expense.notes ?? ''
@@ -512,12 +374,10 @@ new Date().getFullYear();
 
     const request$ =
       this.editingExpenseId === null
-
         ? this.expenseService
           .createExpense(
             this.newExpense
 )
-
 : this.expenseService
 .updateExpense(
             this.editingExpenseId,
@@ -525,7 +385,6 @@ new Date().getFullYear();
           );
 
     request$.subscribe({
-
       next: () => {
 
         this.saving = false;
@@ -583,7 +442,6 @@ new Date().getFullYear();
         this.editingExpenseId
 )
 .subscribe({
-
         next: () => {
 
           this.deleting = false;
@@ -617,39 +475,6 @@ new Date().getFullYear();
       });
   }
 
-  private findQuickMerchantKey(
-    category: string,
-    merchant: string
-  ): string | null {
-
-    const normalizedMerchant =
-      merchant.trim();
-
-    if (!normalizedMerchant) {
-      return null;
-    }
-
-    const matchedMerchant =
-      getQuickMerchantByName(
-        category,
-        normalizedMerchant
-      );
-
-    if (matchedMerchant) {
-
-      return matchedMerchant.key;
-    }
-
-    const otherMerchant =
-      getOtherMerchant(
-        category
-      );
-
-    return (
-      otherMerchant?.key ?? null
-    );
-  }
-
   get quickMerchants():
     QuickMerchantOption[] {
 
@@ -663,8 +488,7 @@ new Date().getFullYear();
   ): string | null {
 
     const merchant =
-      expense.merchant?.trim()
-      ?? '';
+      expense.merchant?.trim() ?? '';
 
     if (!merchant) {
       return null;
@@ -676,138 +500,46 @@ new Date().getFullYear();
     );
   }
 
-  private calculateSummary(): void {
+  getCategoryLabel(
+    category: string
+  ): string {
 
-    this.totalSpent =
-      this.expenses.reduce(
-        (total, expense) =>
-          total +
-          Number(expense.amount),
-        0
-      );
-
-    const categoryMap =
-      new Map<string, number>();
-
-    for (
-      const expense
-      of this.expenses
-    ) {
-
-      const current =
-        categoryMap.get(
-          expense.category
-        ) ?? 0;
-
-      categoryMap.set(
-        expense.category,
-        current +
-        Number(expense.amount)
-      );
-    }
-
-    this.categorySummaries =
-      Array.from(
-        categoryMap.entries()
+    return (
+      this.categories
+        .find(
+          item =>
+            item.value === category
 )
-.map(
-          ([category, amount]) => {
+?.label ??
+category
+);
+}
 
-            const option =
-              this.categories.find(
-                item =>
-                  item.value ===
-                  category
-              );
+getCategoryIcon(
+    category: string
+  ): string {
 
-            return {
-
-              value:
-                category,
-
-              label:
-                option?.label ??
-                category,
-
-              icon:
-                option?.icon ??
-                '💵',
-
-              color:
-                option?.color ??
-                '#94a3b8',
-
-              amount,
-
-              percentage:
-                this.totalSpent > 0
-                  ? (
-                    amount /
-                    this.totalSpent
-                  ) * 100
-                  : 0
-            };
-          }
+    return (
+      this.categories
+        .find(
+          item =>
+            item.value === category
 )
-.sort(
-          (a, b) =>
-            b.amount -
-            a.amount
-        );
-  }
+?.icon ??
+'💵'
+);
+}
 
-  private createEmptyExpense():
-    CreateExpenseRequest {
-
-    return {
-
-      amount: 0,
-
-      category: '',
-
-      merchant: '',
-
-      description: '',
-
-      expenseDate:
-        this.getTodayDate(),
-
-      paymentMethod:
-        'Credit Card',
-
-      notes: ''
-    };
-  }
-
-  private getTodayDate(): string {
-
-    const now =
-      new Date();
-
-    return [
-      now.getFullYear(),
-
-      String(
-        now.getMonth() + 1
-      ).padStart(2, '0'),
-
-      String(
-        now.getDate()
-      ).padStart(2, '0')
-
-    ].join('-');
-  }
-
-  get userInitial(): string {
+get userInitial(): string {
 
     const user =
       this.authService
         .getCurrentUserValue();
 
     const value =
-      user?.name?.trim()
-      || user?.email?.trim()
-      || 'U';
+      user?.name?.trim() ||
+      user?.email?.trim() ||
+      'U';
 
     return value
       .charAt(0)
@@ -890,67 +622,87 @@ new Date().getFullYear();
     );
   }
 
-  get donutGradient(): string {
+  private calculateSummary(): void {
 
-    if (
-      !this.categorySummaries.length ||
-      this.totalSpent <= 0
-    ) {
+    this.totalSpent =
+      calculateTotalSpent(
+        this.expenses
+      );
 
-      return '#e5e7eb';
+    this.categorySummaries =
+      calculateCategorySummaries(
+        this.expenses,
+        this.categories
+      );
+  }
+
+  private findQuickMerchantKey(
+    category: string,
+    merchant: string
+  ): string | null {
+
+    const normalizedMerchant =
+      merchant.trim();
+
+    if (!normalizedMerchant) {
+      return null;
     }
 
-    let position = 0;
+    const matchedMerchant =
+      getQuickMerchantByName(
+        category,
+        normalizedMerchant
+      );
 
-    const slices =
-      this.categorySummaries.map(
-        category => {
+    if (matchedMerchant) {
+      return matchedMerchant.key;
+    }
 
-          const start =
-            position;
-
-          position +=
-            category.percentage;
-
-          return (
-            `${category.color} ` +
-            `${start}% ` +
-            `${position}%`
-          );
-        }
+    const otherMerchant =
+      getOtherMerchant(
+        category
       );
 
     return (
-      `conic-gradient(` +
-      `${slices.join(',')})`
+      otherMerchant?.key ?? null
     );
   }
 
-  getCategoryLabel(
-    category: string
-  ): string {
+  private createEmptyExpense():
+    CreateExpenseRequest {
 
-    return (
-      this.categories
-        .find(
-          item =>
-            item.value === category
-)
-?.label ?? category
-);
-}
+    return {
+      amount: 0,
+      category: '',
+      merchant: '',
+      description: '',
 
-getCategoryIcon(
-    category: string
-  ): string {
+      expenseDate:
+        this.getTodayDate(),
 
-    return (
-      this.categories
-        .find(
-          item =>
-            item.value === category
-)
-?.icon ?? '💵'
-);
-}
+      paymentMethod:
+        'Credit Card',
+
+      notes: ''
+    };
+  }
+
+  private getTodayDate(): string {
+
+    const now =
+      new Date();
+
+    return [
+      now.getFullYear(),
+
+      String(
+        now.getMonth() + 1
+      ).padStart(2, '0'),
+
+      String(
+        now.getDate()
+      ).padStart(2, '0')
+
+    ].join('-');
+  }
 }
