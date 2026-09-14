@@ -1,11 +1,18 @@
 import { CommonModule } from '@angular/common';
+
 import {
 ChangeDetectorRef,
 Component,
 OnInit
 } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
+
 import { Router } from '@angular/router';
+
+import {
+firstValueFrom
+} from 'rxjs';
 
 import {
 IonContent,
@@ -55,6 +62,11 @@ Expense,
 ExpenseService
 } from '../services/expense.service';
 
+import {
+SpendingPdfService
+} from '../services/spending-pdf.service';
+
+
 @Component({
 selector: 'app-home',
 templateUrl: 'home.page.html',
@@ -71,64 +83,102 @@ SpendingAnalyticsComponent
 export class HomePage implements OnInit {
 
 expenses: Expense[] = [];
-categorySummaries: CategorySummary[] = [];
+
+categorySummaries:
+CategorySummary[] = [];
 
 totalSpent = 0;
+
 loading = true;
 
-readonly monthlyBudget = MONTHLY_BUDGET;
-readonly months = MONTHS;
-readonly years = buildYearOptions();
-readonly paymentMethods = PAYMENT_METHODS;
-readonly categories = CATEGORIES;
+pdfGenerating = false;
 
-periodMode: PeriodMode = 'MONTH';
 
-selectedYear =
-new Date().getFullYear();
+readonly monthlyBudget =
+MONTHLY_BUDGET;
+
+readonly months =
+MONTHS;
+
+readonly years =
+buildYearOptions();
+
+  readonly paymentMethods =
+    PAYMENT_METHODS;
+
+  readonly categories =
+    CATEGORIES;
+
+
+  periodMode:
+    PeriodMode = 'MONTH';
+
+
+  selectedYear =
+    new Date().getFullYear();
 
   selectedMonth =
     new Date().getMonth() + 1;
 
+
   addExpenseOpen = false;
+
   saving = false;
+
   deleting = false;
 
   saveError = '';
 
+
   editingExpenseId:
     number | null = null;
 
+
   selectedQuickMerchantKey:
     string | null = null;
+
 
   newExpense:
     CreateExpenseRequest =
       this.createEmptyExpense();
 
+
   constructor(
+
     private readonly expenseService:
       ExpenseService,
 
     private readonly authService:
       AuthService,
 
+    private readonly spendingPdfService:
+      SpendingPdfService,
+
     private readonly router:
       Router,
 
     private readonly cdr:
       ChangeDetectorRef
+
   ) {}
 
+
   ngOnInit(): void {
+
     this.loadExpenses();
   }
+
+
+  /* =========================
+     LOGOUT
+     ========================= */
 
   logout(): void {
 
     this.authService
       .logout()
       .subscribe({
+
         next: () => {
 
           this.router.navigateByUrl(
@@ -138,6 +188,7 @@ new Date().getFullYear();
             }
           );
         },
+
 
         error: error => {
 
@@ -149,33 +200,52 @@ new Date().getFullYear();
       });
   }
 
+
+  /* =========================
+     PERIOD FILTER
+     ========================= */
+
   setPeriodMode(
     mode: PeriodMode
   ): void {
 
     if (
-      this.periodMode === mode
+      this.periodMode ===
+      mode
     ) {
       return;
     }
 
-    this.periodMode = mode;
+
+    this.periodMode =
+      mode;
+
 
     this.loadExpenses();
   }
+
 
   onPeriodChange(): void {
+
     this.loadExpenses();
   }
+
+
+  /* =========================
+     LOAD EXPENSES
+     ========================= */
 
   loadExpenses(): void {
 
-    this.loading = true;
+    this.loading =
+      true;
+
 
     const month =
       this.periodMode === 'MONTH'
         ? this.selectedMonth
         : undefined;
+
 
     this.expenseService
       .getExpenses(
@@ -183,17 +253,25 @@ new Date().getFullYear();
         month
 )
 .subscribe({
+
         next: expenses => {
 
           this.expenses =
-            expenses;
+            this.sortExpenses(
+              expenses
+            );
+
 
           this.calculateSummary();
 
-          this.loading = false;
+
+          this.loading =
+            false;
+
 
           this.cdr.detectChanges();
         },
+
 
         error: error => {
 
@@ -202,28 +280,149 @@ new Date().getFullYear();
             error
           );
 
-          this.loading = false;
+
+          this.loading =
+            false;
+
 
           this.cdr.detectChanges();
         }
       });
   }
 
+
+  /* =========================
+     PDF DOWNLOAD
+     ========================= */
+
+  async downloadSpendingPdf():
+    Promise<void> {
+
+    if (
+      this.pdfGenerating ||
+      this.expenses.length === 0
+    ) {
+      return;
+    }
+
+
+    this.pdfGenerating =
+      true;
+
+
+    try {
+
+      let user =
+        this.authService
+          .getCurrentUserValue();
+
+
+      if (
+        !user
+      ) {
+
+        user =
+          await firstValueFrom(
+            this.authService
+              .getCurrentUser()
+          );
+      }
+
+
+      await this.spendingPdfService
+        .downloadReport({
+
+          user,
+
+          expenses:
+            this.expenses,
+
+          categorySummaries:
+            this.categorySummaries,
+
+          totalSpent:
+            this.totalSpent,
+
+          periodMode:
+            this.periodMode,
+
+          periodLabel:
+            this.periodLabel,
+
+          selectedYear:
+            this.selectedYear,
+
+          selectedMonth:
+            this.periodMode === 'MONTH'
+              ? this.selectedMonth
+              : undefined,
+
+          periodBudget:
+            this.periodBudget,
+
+          remainingBudget:
+            this.remainingBudget,
+
+          budgetPercentage:
+            this.budgetPercentage
+
+        });
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        'Unable to generate spending PDF',
+        error
+      );
+
+
+      window.alert(
+        'Unable to generate the PDF report.'
+      );
+
+    } finally {
+
+      this.pdfGenerating =
+        false;
+
+
+      this.cdr.detectChanges();
+    }
+  }
+
+
+  /* =========================
+     ADD EXPENSE
+     ========================= */
+
   openAddExpense(): void {
 
     this.editingExpenseId =
       null;
 
+
     this.selectedQuickMerchantKey =
       null;
+
 
     this.newExpense =
       this.createEmptyExpense();
 
-    this.saveError = '';
 
-    this.addExpenseOpen = true;
+    this.saveError =
+      '';
+
+
+    this.addExpenseOpen =
+      true;
   }
+
+
+  /* =========================
+     EDIT EXPENSE
+     ========================= */
 
   openEditExpense(
     expense: Expense
@@ -232,9 +431,13 @@ new Date().getFullYear();
     this.editingExpenseId =
       expense.id;
 
+
     this.newExpense = {
+
       amount:
-        Number(expense.amount),
+        Number(
+          expense.amount
+        ),
 
       category:
         expense.category,
@@ -254,7 +457,9 @@ new Date().getFullYear();
 
       notes:
         expense.notes ?? ''
+
     };
+
 
     this.selectedQuickMerchantKey =
       this.findQuickMerchantKey(
@@ -262,10 +467,15 @@ new Date().getFullYear();
         expense.merchant ?? ''
       );
 
-    this.saveError = '';
 
-    this.addExpenseOpen = true;
+    this.saveError =
+      '';
+
+
+    this.addExpenseOpen =
+      true;
   }
+
 
   closeAddExpense(): void {
 
@@ -276,17 +486,27 @@ new Date().getFullYear();
       return;
     }
 
+
     this.addExpenseOpen =
       false;
+
 
     this.editingExpenseId =
       null;
 
+
     this.selectedQuickMerchantKey =
       null;
 
-    this.saveError = '';
+
+    this.saveError =
+      '';
   }
+
+
+  /* =========================
+     CATEGORY
+     ========================= */
 
   selectCategory(
     category: string
@@ -296,18 +516,28 @@ new Date().getFullYear();
       this.newExpense.category !==
       category;
 
+
     this.newExpense.category =
       category;
 
-    if (categoryChanged) {
+
+    if (
+      categoryChanged
+    ) {
 
       this.newExpense.merchant =
         '';
+
 
       this.selectedQuickMerchantKey =
         null;
     }
   }
+
+
+  /* =========================
+     QUICK MERCHANT
+     ========================= */
 
   selectQuickMerchant(
     option: QuickMerchantOption
@@ -316,9 +546,11 @@ new Date().getFullYear();
     this.selectedQuickMerchantKey =
       option.key;
 
+
     this.newExpense.merchant =
       option.merchant;
   }
+
 
   onMerchantInput(): void {
 
@@ -328,6 +560,7 @@ new Date().getFullYear();
         this.newExpense.merchant ?? ''
       );
   }
+
 
   isQuickMerchantSelected(
     option: QuickMerchantOption
@@ -339,9 +572,16 @@ new Date().getFullYear();
     );
   }
 
+
+  /* =========================
+     SAVE EXPENSE
+     ========================= */
+
   saveExpense(): void {
 
-    this.saveError = '';
+    this.saveError =
+      '';
+
 
     if (
       !this.newExpense.amount ||
@@ -354,7 +594,10 @@ new Date().getFullYear();
       return;
     }
 
-    if (!this.newExpense.category) {
+
+    if (
+      !this.newExpense.category
+    ) {
 
       this.saveError =
         'Choose a spending category.';
@@ -362,7 +605,10 @@ new Date().getFullYear();
       return;
     }
 
-    if (!this.newExpense.expenseDate) {
+
+    if (
+      !this.newExpense.expenseDate
+    ) {
 
       this.saveError =
         'Choose an expense date.';
@@ -370,93 +616,131 @@ new Date().getFullYear();
       return;
     }
 
-    this.saving = true;
+
+    this.saving =
+      true;
+
 
     const request$ =
       this.editingExpenseId === null
+
         ? this.expenseService
           .createExpense(
             this.newExpense
 )
+
 : this.expenseService
 .updateExpense(
             this.editingExpenseId,
             this.newExpense
           );
 
-    request$.subscribe({
-      next: () => {
 
-        this.saving = false;
+    request$
+      .subscribe({
 
-        this.addExpenseOpen =
-          false;
+        next: () => {
 
-        this.editingExpenseId =
-          null;
+          this.saving =
+            false;
 
-        this.selectedQuickMerchantKey =
-          null;
 
-        this.loadExpenses();
-      },
+          this.addExpenseOpen =
+            false;
 
-      error: error => {
 
-        console.error(
-          'Unable to save expense',
-          error
-        );
+          this.editingExpenseId =
+            null;
 
-        this.saveError =
-          'Unable to save expense.';
 
-        this.saving = false;
+          this.selectedQuickMerchantKey =
+            null;
 
-        this.cdr.detectChanges();
-      }
-    });
+
+          this.loadExpenses();
+        },
+
+
+        error: error => {
+
+          console.error(
+            'Unable to save expense',
+            error
+          );
+
+
+          this.saveError =
+            'Unable to save expense.';
+
+
+          this.saving =
+            false;
+
+
+          this.cdr.detectChanges();
+        }
+      });
   }
+
+
+  /* =========================
+     DELETE EXPENSE
+     ========================= */
 
   deleteExpense(): void {
 
     if (
-      this.editingExpenseId === null
+      this.editingExpenseId ===
+      null
     ) {
       return;
     }
+
 
     const confirmed =
       window.confirm(
         'Delete this expense?'
       );
 
-    if (!confirmed) {
+
+    if (
+      !confirmed
+    ) {
       return;
     }
 
-    this.deleting = true;
+
+    this.deleting =
+      true;
+
 
     this.expenseService
       .deleteExpense(
         this.editingExpenseId
 )
 .subscribe({
+
         next: () => {
 
-          this.deleting = false;
+          this.deleting =
+            false;
+
 
           this.addExpenseOpen =
             false;
 
+
           this.editingExpenseId =
             null;
+
 
           this.selectedQuickMerchantKey =
             null;
 
+
           this.loadExpenses();
         },
+
 
         error: error => {
 
@@ -465,15 +749,24 @@ new Date().getFullYear();
             error
           );
 
+
           this.saveError =
             'Unable to delete expense.';
 
-          this.deleting = false;
+
+          this.deleting =
+            false;
+
 
           this.cdr.detectChanges();
         }
       });
   }
+
+
+  /* =========================
+     QUICK MERCHANT GETTER
+     ========================= */
 
   get quickMerchants():
     QuickMerchantOption[] {
@@ -483,22 +776,37 @@ new Date().getFullYear();
     );
   }
 
+
+  /* =========================
+     TRANSACTION IMAGE
+     ========================= */
+
   getTransactionMerchantImage(
     expense: Expense
   ): string | null {
 
     const merchant =
-      expense.merchant?.trim() ?? '';
+      expense.merchant
+        ?.trim() ?? '';
 
-    if (!merchant) {
+
+    if (
+      !merchant
+    ) {
       return null;
     }
+
 
     return getMerchantImage(
       expense.category,
       merchant
     );
   }
+
+
+  /* =========================
+     CATEGORY DISPLAY
+     ========================= */
 
   getCategoryLabel(
     category: string
@@ -508,12 +816,14 @@ new Date().getFullYear();
       this.categories
         .find(
           item =>
-            item.value === category
+            item.value ===
+            category
 )
 ?.label ??
 category
 );
 }
+
 
 getCategoryIcon(
     category: string
@@ -523,30 +833,45 @@ getCategoryIcon(
       this.categories
         .find(
           item =>
-            item.value === category
+            item.value ===
+            category
 )
 ?.icon ??
 '💵'
 );
 }
 
-get userInitial(): string {
+
+/* =========================
+USER
+========================= */
+
+get userInitial():
+    string {
 
     const user =
       this.authService
         .getCurrentUserValue();
+
 
     const value =
       user?.name?.trim() ||
       user?.email?.trim() ||
       'U';
 
+
     return value
       .charAt(0)
       .toUpperCase();
   }
 
-  get periodBudget(): number {
+
+  /* =========================
+     BUDGET
+     ========================= */
+
+  get periodBudget():
+    number {
 
     return (
       this.periodMode === 'MONTH'
@@ -555,7 +880,9 @@ get userInitial(): string {
     );
   }
 
-  get remainingBudget(): number {
+
+  get remainingBudget():
+    number {
 
     return Math.max(
       this.periodBudget -
@@ -564,7 +891,9 @@ get userInitial(): string {
     );
   }
 
-  get budgetPercentage(): number {
+
+  get budgetPercentage():
+    number {
 
     if (
       this.periodBudget <= 0
@@ -572,25 +901,35 @@ get userInitial(): string {
       return 0;
     }
 
+
     return Math.min(
       (
         this.totalSpent /
         this.periodBudget
-      ) * 100,
+      ) *
+      100,
       100
     );
   }
 
-  get periodLabel(): string {
+
+  /* =========================
+     PERIOD LABELS
+     ========================= */
+
+  get periodLabel():
+    string {
 
     if (
-      this.periodMode === 'YEAR'
+      this.periodMode ===
+      'YEAR'
     ) {
 
       return String(
         this.selectedYear
       );
     }
+
 
     const month =
       this.months.find(
@@ -599,12 +938,15 @@ get userInitial(): string {
           this.selectedMonth
       );
 
+
     return `${
       month?.label ?? ''
     } ${this.selectedYear}`;
   }
 
-  get periodDescription(): string {
+
+  get periodDescription():
+    string {
 
     return (
       this.periodMode === 'MONTH'
@@ -613,7 +955,9 @@ get userInitial(): string {
     );
   }
 
-  get budgetLabel(): string {
+
+  get budgetLabel():
+    string {
 
     return (
       this.periodMode === 'MONTH'
@@ -622,12 +966,19 @@ get userInitial(): string {
     );
   }
 
-  private calculateSummary(): void {
+
+  /* =========================
+     SUMMARY
+     ========================= */
+
+  private calculateSummary():
+    void {
 
     this.totalSpent =
       calculateTotalSpent(
         this.expenses
       );
+
 
     this.categorySummaries =
       calculateCategorySummaries(
@@ -636,7 +987,55 @@ get userInitial(): string {
       );
   }
 
-  private findQuickMerchantKey(
+
+  /* =========================
+     SORT EXPENSES
+     ========================= */
+
+  private sortExpenses(
+    expenses: Expense[]
+  ): Expense[] {
+
+    return [...expenses]
+      .sort(
+        (
+          first,
+          second
+        ) => {
+
+          const dateComparison =
+            second.expenseDate
+              .localeCompare(
+                first.expenseDate
+              );
+
+
+          if (
+            dateComparison !== 0
+          ) {
+
+            return dateComparison;
+          }
+
+
+          return (
+            Number(
+              second.id
+            ) -
+            Number(
+              first.id
+)
+);
+}
+);
+}
+
+
+/* =========================
+QUICK MERCHANT LOOKUP
+========================= */
+
+private findQuickMerchantKey(
     category: string,
     merchant: string
   ): string | null {
@@ -644,9 +1043,13 @@ get userInitial(): string {
     const normalizedMerchant =
       merchant.trim();
 
-    if (!normalizedMerchant) {
+
+    if (
+      !normalizedMerchant
+    ) {
       return null;
     }
+
 
     const matchedMerchant =
       getQuickMerchantByName(
@@ -654,27 +1057,43 @@ get userInitial(): string {
         normalizedMerchant
       );
 
-    if (matchedMerchant) {
+
+    if (
+      matchedMerchant
+    ) {
+
       return matchedMerchant.key;
     }
+
 
     const otherMerchant =
       getOtherMerchant(
         category
       );
 
+
     return (
-      otherMerchant?.key ?? null
+      otherMerchant?.key ??
+      null
     );
   }
+
+
+  /* =========================
+     EMPTY EXPENSE
+     ========================= */
 
   private createEmptyExpense():
     CreateExpenseRequest {
 
     return {
+
       amount: 0,
+
       category: '',
+
       merchant: '',
+
       description: '',
 
       expenseDate:
@@ -684,25 +1103,44 @@ get userInitial(): string {
         'Credit Card',
 
       notes: ''
+
     };
   }
 
-  private getTodayDate(): string {
+
+  /* =========================
+     TODAY
+     ========================= */
+
+  private getTodayDate():
+    string {
 
     const now =
       new Date();
 
+
     return [
+
       now.getFullYear(),
 
       String(
         now.getMonth() + 1
-      ).padStart(2, '0'),
+)
+.padStart(
+          2,
+          '0'
+        ),
 
       String(
         now.getDate()
-      ).padStart(2, '0')
+)
+.padStart(
+          2,
+          '0'
+)
 
-    ].join('-');
+].join(
+      '-'
+    );
   }
 }

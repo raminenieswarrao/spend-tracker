@@ -250,7 +250,9 @@
       [expenses]="expenses"
       [categorySummaries]="categorySummaries"
       [totalSpent]="totalSpent"
-      [periodLabel]="periodLabel">
+      [periodLabel]="periodLabel"
+      [pdfGenerating]="pdfGenerating"
+      (downloadPdf)="downloadSpendingPdf()">
     </app-spending-analytics>
 
     } @else {
@@ -397,7 +399,23 @@
               </strong>
 
 
-              <span>
+              @if (
+              expense.description &&
+              expense.description.trim()
+              ) {
+
+              <span
+                class="transaction-description">
+
+                {{ expense.description }}
+
+              </span>
+
+              }
+
+
+              <span
+                class="transaction-meta">
 
                 {{
                   expense.expenseDate

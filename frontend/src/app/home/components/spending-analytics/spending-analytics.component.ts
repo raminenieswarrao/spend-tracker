@@ -4,8 +4,10 @@ import {
 
 import {
 Component,
+EventEmitter,
 Input,
-OnChanges
+OnChanges,
+Output
 } from '@angular/core';
 
 import {
@@ -31,7 +33,8 @@ CategorySummary
 
 
 @Component({
-selector: 'app-spending-analytics',
+selector:
+'app-spending-analytics',
 
 standalone: true,
 
@@ -62,6 +65,14 @@ totalSpent = 0;
 
 @Input()
 periodLabel = '';
+
+@Input()
+pdfGenerating = false;
+
+@Output()
+downloadPdf =
+new EventEmitter<void>();
+
 
 selectedCategoryValue:
 string | null = null;
@@ -114,18 +125,22 @@ ngOnChanges(): void {
   }
 
 
+  requestPdfDownload(): void {
+
+    if (
+      this.pdfGenerating
+    ) {
+      return;
+    }
+
+    this.downloadPdf.emit();
+  }
+
+
   onDonutVisibilityChange(
     visible: boolean
   ): void {
 
-    /*
-     * False resets the CSS animation.
-     *
-     * When the donut comes back into
-     * the viewport, true is applied
-     * again and the drawing animation
-     * starts from the beginning.
-     */
     this.donutInView =
       visible;
 
@@ -359,11 +374,6 @@ ngOnChanges(): void {
     }
 
 
-    /*
-     * Convert browser coordinates
-     * into our SVG 200 x 200 viewBox.
-     */
-
     const x =
       (
         (
@@ -412,11 +422,6 @@ ngOnChanges(): void {
       );
 
 
-    /*
-     * Only respond when the cursor
-     * is actually on the donut ring.
-     */
-
     if (
       distance < innerRadius ||
       distance > outerRadius
@@ -424,15 +429,6 @@ ngOnChanges(): void {
       return;
     }
 
-
-    /*
-     * Calculate cursor angle.
-     *
-     * 0 degrees = right side.
-     * Browser Y coordinates increase
-     * downward, giving us clockwise
-     * movement.
-     */
 
     let angle =
       Math.atan2(
@@ -485,10 +481,6 @@ ngOnChanges(): void {
       }
     }
 
-
-    /*
-     * Floating-point fallback.
-     */
 
     const lastCategory =
       this.categorySummaries[

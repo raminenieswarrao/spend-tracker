@@ -3,6 +3,14 @@
 }
 
 .section-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 14px;
+
   margin-bottom: 14px;
 
   h3 {
@@ -17,6 +25,150 @@
     color: #9ca3af;
 
     font-size: 12px;
+  }
+}
+
+
+.pdf-download-button {
+  min-height: 38px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  flex-shrink: 0;
+
+  padding:
+    8px 13px;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  background: white;
+
+  color: #374151;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 14px
+    rgba(
+      17,
+      24,
+      39,
+      0.04
+    );
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+
+  svg {
+    width: 17px;
+    height: 17px;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+
+    stroke-linejoin: round;
+  }
+
+  &:active {
+    transform:
+      scale(0.96);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+
+    cursor: default;
+
+    transform: none;
+  }
+}
+
+
+@media (hover: hover) {
+
+  .pdf-download-button:not(:disabled):hover {
+
+    border-color:
+      #111827;
+
+    background:
+      #111827;
+
+    color: white;
+  }
+}
+
+
+.pdf-spinner {
+  width: 14px;
+  height: 14px;
+
+  box-sizing: border-box;
+
+  border:
+    2px solid
+    #d1d5db;
+
+  border-top-color:
+    #111827;
+
+  border-radius: 50%;
+
+  animation:
+    pdf-spin
+    0.7s
+    linear
+    infinite;
+}
+
+
+@keyframes pdf-spin {
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+@media (max-width: 480px) {
+
+  .pdf-download-button {
+    width: 40px;
+    height: 40px;
+
+    min-height: 40px;
+
+    padding: 0;
+
+    border-radius: 12px;
+  }
+
+  .pdf-button-label {
+    display: none;
   }
 }
 

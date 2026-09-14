@@ -14,6 +14,51 @@
 
     </div>
 
+
+    <button
+      type="button"
+      class="pdf-download-button"
+      [disabled]="pdfGenerating"
+      (click)="requestPdfDownload()">
+
+      @if (pdfGenerating) {
+
+      <span
+        class="pdf-spinner">
+      </span>
+
+      <span class="pdf-button-label">
+        Generating...
+      </span>
+
+      } @else {
+
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true">
+
+        <path
+          d="M12 3v12">
+        </path>
+
+        <path
+          d="m7 10 5 5 5-5">
+        </path>
+
+        <path
+          d="M5 21h14">
+        </path>
+
+      </svg>
+
+      <span class="pdf-button-label">
+        PDF
+      </span>
+
+      }
+
+    </button>
+
   </div>
 
 
@@ -28,10 +73,6 @@
         onAnalyticsPointerLeave($event)
       ">
 
-
-      <!-- =========================
-           DONUT AREA
-           ========================= -->
 
       <div class="donut-area">
 
@@ -62,18 +103,6 @@
               )
             ">
 
-
-            <!-- =========================
-                 REVEAL MASK
-
-                 The white circle inside
-                 the mask grows around the
-                 donut.
-
-                 Only the portion covered
-                 by white becomes visible.
-                 ========================= -->
-
             <defs>
 
               <mask id="donutRevealMask">
@@ -85,7 +114,6 @@
                   height="200"
                   fill="black">
                 </rect>
-
 
                 <circle
                   class="donut-reveal-path"
@@ -104,10 +132,6 @@
             </defs>
 
 
-            <!-- =========================
-                 BACKGROUND TRACK
-                 ========================= -->
-
             <circle
               class="donut-track"
               cx="100"
@@ -115,14 +139,6 @@
               r="76">
             </circle>
 
-
-            <!-- =========================
-                 COLORED DONUT
-
-                 The mask controls how
-                 much of these slices is
-                 currently visible.
-                 ========================= -->
 
             <g
               mask="url(#donutRevealMask)"
@@ -158,10 +174,6 @@
             </g>
 
 
-            <!-- =========================
-                 POINTER HIT RING
-                 ========================= -->
-
             <circle
               class="donut-hit-ring"
               cx="100"
@@ -171,10 +183,6 @@
 
           </svg>
 
-
-          <!-- =========================
-               CENTER VALUE
-               ========================= -->
 
           <div
             class="donut-center"
@@ -200,10 +208,6 @@
         </div>
 
 
-        <!-- =========================
-             HINT
-             ========================= -->
-
         <p
           class="donut-hint"
           [class.donut-hint-visible]="
@@ -217,10 +221,6 @@
 
       </div>
 
-
-      <!-- =========================
-           MERCHANT BREAKDOWN
-           ========================= -->
 
       @if (
       selectedCategory;
@@ -280,10 +280,6 @@
 
         </div>
 
-
-        <!-- =========================
-             MERCHANT LIST
-             ========================= -->
 
         @if (
         merchantSummaries.length > 0
@@ -407,14 +403,6 @@
 
       } @else {
 
-
-      <!-- =========================
-           INVISIBLE PLACEHOLDER
-
-           Keeps desktop layout stable
-           while donut is centered.
-           ========================= -->
-
       <aside
         class="
           merchant-panel
@@ -427,10 +415,6 @@
 
     </div>
 
-
-    <!-- =========================
-         CATEGORY TOTALS
-         ========================= -->
 
     <div class="category-list">
 

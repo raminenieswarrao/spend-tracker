@@ -210,6 +210,12 @@ merchant: 'Taco Bell',
 image: 'assets/icon/food/taco-bell.png'
 },
 {
+key: 'UNITED_DAIRY_FARMERS',
+label: 'United Dairy Farmers',
+merchant: 'United Dairy Farmers',
+image: 'assets/icon/food/united-dairy-farmer.png'
+},
+{
 key: 'OTHER',
 label: 'Other',
 merchant: '',
@@ -451,6 +457,58 @@ label: 'Best Buy',
 merchant: 'Best Buy',
 image: 'assets/icon/shopping/best-buy.png'
 },
+
+/* =========================
+TECHNOLOGY / ELECTRONICS
+========================= */
+
+{
+key: 'APPLE',
+label: 'Apple',
+merchant: 'Apple',
+image: 'assets/icon/shopping/apple.png'
+},
+{
+key: 'SAMSUNG',
+label: 'Samsung',
+merchant: 'Samsung',
+image: 'assets/icon/shopping/samsung.png'
+},
+{
+key: 'GOOGLE',
+label: 'Google',
+merchant: 'Google',
+image: 'assets/icon/shopping/google.png'
+},
+{
+key: 'LENOVO',
+label: 'Lenovo',
+merchant: 'Lenovo',
+image: 'assets/icon/shopping/lenovo.png'
+},
+{
+key: 'DELL',
+label: 'Dell',
+merchant: 'Dell',
+image: 'assets/icon/shopping/dell.webp'
+},
+{
+key: 'HP',
+label: 'HP',
+merchant: 'HP',
+image: 'assets/icon/shopping/hp.png'
+},
+{
+key: 'MICROSOFT',
+label: 'Microsoft',
+merchant: 'Microsoft',
+image: 'assets/icon/shopping/microsoft.jpg'
+},
+
+/* =========================
+CLOTHING / GENERAL SHOPPING
+========================= */
+
 {
 key: 'MACYS',
 label: 'Macy\'s',
